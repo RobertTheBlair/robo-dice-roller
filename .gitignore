@@ -1,0 +1,19 @@
+# Mac OSX system files
+.DS_Store
+.localized
+
+
+
+# Maven build files
+target/
+
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+*.rdb
+
+
+tmp/
+temp/
