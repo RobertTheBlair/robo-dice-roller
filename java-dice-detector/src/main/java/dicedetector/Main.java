@@ -94,9 +94,42 @@ public class Main {
             // auto generated :)
             e.printStackTrace();
         }
+        int width = bufferedImage.getWidth();
+        int height = bufferedImage.getHeight();
+
+        int targetMaxWidth = 640;
+        int targetMaxHeight = 480;
+        if (width > targetMaxWidth || height > targetMaxHeight) {
+            double widthScale = (double)targetMaxWidth / width;
+            double heightScale = (double)targetMaxHeight / height;
+            double scale = Math.min(widthScale, heightScale);
+            int newWidth = (int)(width * scale);
+            int newHeight = (int)(height * scale);
+
+            System.out.println("w=" + width + ", tw=" + targetMaxWidth + " h=" + height + " th=" + targetMaxHeight + " scaleW=" + widthScale + "scaleH=" + heightScale);
+
+            Image originalImage = bufferedImage.getScaledInstance(newWidth, (int)(height * scale), Image.SCALE_SMOOTH);
+
+            int type = ((bufferedImage.getType() == 0) ? BufferedImage.TYPE_INT_ARGB : bufferedImage.getType());
+            // create a buffer of the desired processing size
+            BufferedImage resizedImage = new BufferedImage(targetMaxWidth, targetMaxHeight, type);
+
+            // create a graphics context to write resized image into
+            Graphics2D g2d = resizedImage.createGraphics();
+            g2d.setColor(Color.GRAY);
+            g2d.fillRect(0, 0, targetMaxWidth, targetMaxHeight);
+
+            // center the resized image inside the target area, and draw it
+            int offsetX = (targetMaxWidth - newWidth)/2;
+            int offsetY = (targetMaxHeight - newHeight)/2;
+            g2d.drawImage(originalImage, offsetX, offsetY, null);
+            g2d.dispose();
+            bufferedImage = resizedImage;
+        }
         imageHolder.setImage(bufferedImage);
         image.setIcon(imageHolder);
         imageFrame.pack();
+        imageFrame.repaint(30);
     }
 
     BufferedImage bufferedImage;
@@ -114,7 +147,7 @@ public class Main {
 
         imageFrame.setJMenuBar(initMenu());
 
-        imageFrame.setSize(400, 400);
+        imageFrame.setSize(640, 480);
         imageFrame.setLayout(new FlowLayout());
         imageFrame.setVisible(true);
     }
@@ -123,6 +156,9 @@ public class Main {
 
         JMenu manipulationMenu = new JMenu("options");
         JMenuItem bwUpdate = new JMenuItem("convert to b/w");
+        bwUpdate.addActionListener(this::updateImage);
+        bwUpdate.addActionListener(this::updateImage);
+        bwUpdate.addActionListener(this::updateImage);
         bwUpdate.addActionListener(this::updateImage);
         manipulationMenu.add(bwUpdate);
 
