@@ -5,19 +5,47 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 
 public class Main {
 
-    void test() {
-        System.out.println("Method 3");
+    private void updateImage(final ActionEvent actionEvent) {
+        int threshold = 3 * 170;
+
+        System.out.println("updating the image");
+        if (bufferedImage!=null) {
+            WritableRaster writableRaster = bufferedImage.getRaster();
+            int[] pixel = new int[4];
+            int[] outPixel = new int[4];
+            int width = writableRaster.getWidth();
+            int height = writableRaster.getHeight();
+            for (int y=0;y<height; y++) {
+                for (int x = 0; x< width; x++) {
+                    writableRaster.getPixel(x, y, pixel);
+                    int pixelSum = pixel[0] + pixel[1] + pixel[2];
+                    if (pixelSum > threshold) {
+                        outPixel[0] = 255;
+                        outPixel[1] = 255;
+                        outPixel[2] = 255;
+                    } else {
+                        outPixel[0] = 0;
+                        outPixel[1] = 0;
+                        outPixel[2] = 0;
+                    }
+
+                    outPixel[3] = 255;
+                    writableRaster.setPixel(x, y, outPixel);
+                }
+            }
+        }
+        imageFrame.repaint();
     }
 
-    void displayImage(JFrame frame, int number, boolean original, boolean ideal) {
+    void displayImage(ActionEvent actionEvent, boolean original, boolean ideal) {
 
         String filePath = "../robo-dice-roller/images";
-
         String small = "";
 
         if(original) {
@@ -27,6 +55,7 @@ public class Main {
             filePath += "/small";
             small = "_small";
         }
+        final int number = Integer.parseInt(actionEvent.getActionCommand());
 
         switch (number) {
             case 1:
@@ -47,10 +76,12 @@ public class Main {
             case 6:
                 filePath += "/six_";
                 break;
+            default:
+                System.out.println("Unexpected face name " + number);
         }
-        if(ideal) 
+        if(ideal)
             filePath += "ideal";
-        else 
+        else
             filePath += "unideal";
 
 
@@ -65,53 +96,53 @@ public class Main {
         }
         imageHolder.setImage(bufferedImage);
         image.setIcon(imageHolder);
-        frame.pack();
+        imageFrame.pack();
     }
 
-    JMenu menu, imageSubMenu;
-    JMenuItem a1, imageSixSmall, imageOneOriginal;
     BufferedImage bufferedImage;
     ImageIcon imageHolder;
     JLabel image;
+    JFrame imageFrame;
 
     public Main() {
-        JFrame frame = new JFrame("Hello world!");
-        menu = new JMenu("options");
-        JMenuBar m1 = new JMenuBar();
-        a1 = new JMenuItem("Lambda Tester");
-        menu.add(a1);
-        m1.add(menu);
-        /* Three different examples of using lambda functions for JFrame listeners */
-        a1.addActionListener((ActionEvent e) -> test());
-        a1.addActionListener(e -> System.out.println("Method 2"));
-        a1.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                System.out.println("Method 1");
-            }
-        });
+        imageFrame = new JFrame("Image viewer");
 
         image = new JLabel();
         imageHolder = new ImageIcon();
 
-        frame.add(image);
+        imageFrame.add(image);
 
-        imageSixSmall = new JMenuItem("Load Small Ideal 6");
-        imageOneOriginal = new JMenuItem("Load Original Unideal 1");
+        imageFrame.setJMenuBar(initMenu());
 
-        imageOneOriginal.addActionListener((ActionEvent e) -> displayImage(frame, 1, true, false));
-        imageSixSmall.addActionListener((ActionEvent e) -> displayImage(frame, 6, false, true));
-        // a2.addActionListener((ActionEvent e) -> displayImage(a));
+        imageFrame.setSize(400, 400);
+        imageFrame.setLayout(new FlowLayout());
+        imageFrame.setVisible(true);
+    }
 
-        imageSubMenu = new JMenu("Load Images");
-        imageSubMenu.add(imageOneOriginal);
-        imageSubMenu.add(imageSixSmall);
+    private JMenuBar initMenu() {
 
+        JMenu manipulationMenu = new JMenu("options");
+        JMenuItem bwUpdate = new JMenuItem("convert to b/w");
+        bwUpdate.addActionListener(this::updateImage);
+        manipulationMenu.add(bwUpdate);
+
+        JMenu imageSubMenu = new JMenu("Load Images");
+
+        for (int i=1;i<=6; i++) {
+            JMenuItem imageItem = imageSubMenu.add(new JMenuItem("Load Small Ideal " + i));
+            imageItem.addActionListener((ActionEvent e) -> displayImage(e, false, true));
+            imageItem.setActionCommand(String.valueOf(i));
+        }
+        for (int i=1;i<=6; i++) {
+            JMenuItem imageItem = imageSubMenu.add(new JMenuItem("Load Original Unideal " + i));
+            imageItem.setActionCommand(String.valueOf(i));
+            imageItem.addActionListener((ActionEvent e) -> displayImage(e,true, false));
+        }
+
+        JMenuBar m1 = new JMenuBar();
         m1.add(imageSubMenu);
-
-        frame.setJMenuBar(m1);
-        frame.setSize(400, 400);
-        frame.setLayout(new FlowLayout());
-        frame.setVisible(true);
+        m1.add(manipulationMenu);
+        return m1;
     }
 
     public static void main(String[] args) {
