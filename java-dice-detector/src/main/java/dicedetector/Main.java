@@ -88,17 +88,34 @@ public class Main {
         filePath = filePath + small + ".jpg";
         System.out.println("trying to load file: " + filePath);
         File file = new File(filePath);
-        try {
-            bufferedImage = ImageIO.read(file);
-        } catch (IOException e) {
-            // auto generated :)
-            e.printStackTrace();
+        if (file.exists() && file.canRead()) {
+            try {
+                bufferedImage = ImageIO.read(file);
+            } catch (IOException e) {
+                System.out.println("Cannot read image from File " + filePath + ". Stack trace\n");
+                e.printStackTrace(System.out);
+                return;
+            }
+        } else {
+            System.out.println("File " + filePath + " does not exist, or is unreadable");
+            return;
         }
-        int width = bufferedImage.getWidth();
-        int height = bufferedImage.getHeight();
+        if (bufferedImage == null) {
+            System.out.println("File " + filePath + " is not a valid image");
+            return;
+        }
 
-        int targetMaxWidth = 640;
-        int targetMaxHeight = 480;
+        bufferedImage = resizeImageIfBig(bufferedImage, 640, 480);
+        imageHolder.setImage(bufferedImage);
+        image.setIcon(imageHolder);
+        imageFrame.pack();
+        imageFrame.repaint(30);
+    }
+
+    BufferedImage resizeImageIfBig(BufferedImage inputImage, int targetMaxWidth, int targetMaxHeight) {
+        int width = inputImage.getWidth();
+        int height = inputImage.getHeight();
+
         if (width > targetMaxWidth || height > targetMaxHeight) {
             double widthScale = (double)targetMaxWidth / width;
             double heightScale = (double)targetMaxHeight / height;
@@ -108,9 +125,9 @@ public class Main {
 
             System.out.println("w=" + width + ", tw=" + targetMaxWidth + " h=" + height + " th=" + targetMaxHeight + " scaleW=" + widthScale + "scaleH=" + heightScale);
 
-            Image originalImage = bufferedImage.getScaledInstance(newWidth, (int)(height * scale), Image.SCALE_SMOOTH);
+            Image originalImage = inputImage.getScaledInstance(newWidth, (int)(height * scale), Image.SCALE_SMOOTH);
 
-            int type = ((bufferedImage.getType() == 0) ? BufferedImage.TYPE_INT_ARGB : bufferedImage.getType());
+            int type = ((inputImage.getType() == 0) ? BufferedImage.TYPE_INT_ARGB : inputImage.getType());
             // create a buffer of the desired processing size
             BufferedImage resizedImage = new BufferedImage(targetMaxWidth, targetMaxHeight, type);
 
@@ -124,12 +141,9 @@ public class Main {
             int offsetY = (targetMaxHeight - newHeight)/2;
             g2d.drawImage(originalImage, offsetX, offsetY, null);
             g2d.dispose();
-            bufferedImage = resizedImage;
+            return resizedImage;
         }
-        imageHolder.setImage(bufferedImage);
-        image.setIcon(imageHolder);
-        imageFrame.pack();
-        imageFrame.repaint(30);
+        return inputImage;
     }
 
     BufferedImage bufferedImage;
@@ -156,9 +170,6 @@ public class Main {
 
         JMenu manipulationMenu = new JMenu("options");
         JMenuItem bwUpdate = new JMenuItem("convert to b/w");
-        bwUpdate.addActionListener(this::updateImage);
-        bwUpdate.addActionListener(this::updateImage);
-        bwUpdate.addActionListener(this::updateImage);
         bwUpdate.addActionListener(this::updateImage);
         manipulationMenu.add(bwUpdate);
 
