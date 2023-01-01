@@ -8,8 +8,15 @@ import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.Reference;
 
 public class Main {
+
+    final double[][] blurFilter = {
+        {0.0625, 0.125, 0.0625},
+        {0.125, 0.25, 0.125},
+        {0.0625, 0.125, 0.0625}
+};
 
     private void updateImage(final ActionEvent actionEvent) {
         int threshold = 3 * 170;
@@ -43,6 +50,41 @@ public class Main {
         imageFrame.repaint();
     }
 
+    void blurImage(final ActionEvent actionEvent) {
+        if (bufferedImage!=null) {
+            WritableRaster referenceRaster = bufferedImage.getRaster();
+            WritableRaster blurredRaster = referenceRaster; // we will be updating blur a
+            int width = referenceRaster.getWidth();
+            int height = referenceRaster.getHeight();
+            int[] tempPixel = new int[4];
+            int[] outPixel = new int[4];
+            outPixel[3] = 255;
+            /* for each pixel, we average its RGB values with the surrounding pixels if they exist */
+            for (int y=0; y < height; y++) { //jesus christ 4 4loops!!!
+                for (int x = 0; x < width; x++) {
+                    outPixel[0] = 0;
+                    outPixel[1] = 0;
+                    outPixel[2] = 0;
+                    for(int i = 0; i < 3; i++) {
+                        for(int j = 0; j < 3; j++) {
+                            int pixRow = y+i-1;
+                            int pixCol = x+j-1;
+                            
+                            if(pixCol > 0 && pixRow > 0 && pixCol < width && pixRow < height) { //if this is a valid pixel location we add its value to the running sum 
+                                referenceRaster.getPixel(pixCol, pixRow, tempPixel);
+                                outPixel[0] += (tempPixel[0]*blurFilter[i][j]);
+                                outPixel[1] += (tempPixel[1]*blurFilter[i][j]);
+                                outPixel[2] += (tempPixel[2]*blurFilter[i][j]);
+                            }
+                        }
+                    }
+                    blurredRaster.setPixel(x, y, outPixel);
+                }
+            }
+            referenceRaster = blurredRaster;
+        }
+        imageFrame.repaint();
+    }
     void displayImage(ActionEvent actionEvent, boolean original, boolean ideal) {
 
         String filePath = "../robo-dice-roller/images";
@@ -170,8 +212,11 @@ public class Main {
 
         JMenu manipulationMenu = new JMenu("options");
         JMenuItem bwUpdate = new JMenuItem("convert to b/w");
+        JMenuItem blur = new JMenuItem("blur image");
+        blur.addActionListener(this::blurImage);
         bwUpdate.addActionListener(this::updateImage);
         manipulationMenu.add(bwUpdate);
+        manipulationMenu.add(blur);
 
         JMenu imageSubMenu = new JMenu("Load Images");
 
