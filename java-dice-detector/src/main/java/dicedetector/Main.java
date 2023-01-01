@@ -6,6 +6,7 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
@@ -14,18 +15,18 @@ import java.util.List;
 
 public class Main {
 
-
     final double[][] blurFilter = {
         {0.0625, 0.125, 0.0625},
         {0.125, 0.25, 0.125},
         {0.0625, 0.125, 0.0625}
-};
+    };
 
     private void updateImage(final ActionEvent actionEvent) {
         int threshold = 3 * 170;
 
         logInfo("updating the image");
         if (bufferedImage!=null) {
+            long startTime = System.currentTimeMillis();
             WritableRaster writableRaster = bufferedImage.getRaster();
             int[] pixel = new int[4];
             int[] outPixel = new int[4];
@@ -49,44 +50,61 @@ public class Main {
                     writableRaster.setPixel(x, y, outPixel);
                 }
             }
+            long endTime = System.currentTimeMillis();
+            imageData.add("Threshold b/w level=" + threshold/3 + ", duration MS = " + (endTime - startTime));
         }
+        refreshInfoPanel();
         imageFrame.repaint();
     }
 
     void blurImage(final ActionEvent actionEvent) {
         if (bufferedImage!=null) {
+            long startTime = System.currentTimeMillis();
             WritableRaster referenceRaster = bufferedImage.getRaster();
             WritableRaster blurredRaster = referenceRaster; // we will be updating blur a
             int width = referenceRaster.getWidth();
             int height = referenceRaster.getHeight();
             int[] tempPixel = new int[4];
             int[] outPixel = new int[4];
-            outPixel[3] = 255;
             /* for each pixel, we average its RGB values with the surrounding pixels if they exist */
             for (int y=0; y < height; y++) { //jesus christ 4 4loops!!!
                 for (int x = 0; x < width; x++) {
-                    outPixel[0] = 0;
-                    outPixel[1] = 0;
-                    outPixel[2] = 0;
-                    for(int i = 0; i < 3; i++) {
-                        for(int j = 0; j < 3; j++) {
-                            int pixRow = y+i-1;
-                            int pixCol = x+j-1;
-
-                            if(pixCol > 0 && pixRow > 0 && pixCol < width && pixRow < height) { //if this is a valid pixel location we add its value to the running sum
-                                referenceRaster.getPixel(pixCol, pixRow, tempPixel);
-                                outPixel[0] += (tempPixel[0]*blurFilter[i][j]);
-                                outPixel[1] += (tempPixel[1]*blurFilter[i][j]);
-                                outPixel[2] += (tempPixel[2]*blurFilter[i][j]);
-                            }
-                        }
-                    }
+                    applyFilterAtPixel(referenceRaster, x, y, blurFilter, outPixel, tempPixel);
                     blurredRaster.setPixel(x, y, outPixel);
                 }
             }
             referenceRaster = blurredRaster;
+            long endTime = System.currentTimeMillis();
+            imageData.add("Blur action: duration MS = " + (endTime - startTime));
         }
+        refreshInfoPanel();
         imageFrame.repaint();
+    }
+
+    void applyFilterAtPixel(Raster referenceRaster, int x, int y, double[][] filter, int[] outPixel, int[] tempPixel) {
+        int width = referenceRaster.getWidth();
+        int height = referenceRaster.getHeight();
+
+        double r = 0;
+        double g = 0;
+        double b = 0;
+        for(int i = 0; i < 3; i++) {
+            for(int j = 0; j < 3; j++) {
+                int pixRow = y+i-1;
+                int pixCol = x+j-1;
+
+                if(pixCol > 0 && pixRow > 0 && pixCol < width && pixRow < height) { //if this is a valid pixel location we add its value to the running sum
+                    referenceRaster.getPixel(pixCol, pixRow, tempPixel);
+                    r += (tempPixel[0]*filter[i][j]);
+                    g += (tempPixel[1]*filter[i][j]);
+                    b += (tempPixel[2]*filter[i][j]);
+                }
+            }
+        }
+        outPixel[0] = (int)r;
+        outPixel[1] = (int)g;
+        outPixel[2] = (int)b;
+        outPixel[3] = 255;
     }
 
     String imageFileName(final int number, final boolean original, final boolean ideal) {
@@ -137,11 +155,15 @@ public class Main {
     BufferedImage loadImage(final String filePath) {
         logInfo("trying to load file: " + filePath);
 
+        imageData = new ArrayList<>();
+        imageData.add("File loaded = " + filePath);
+
         BufferedImage newImage = null;
         final File file = new File(filePath);
         if (file.exists() && file.canRead()) {
             try {
                 newImage = ImageIO.read(file);
+                imageData.add("Original image size: (" + newImage.getWidth() + ", " + newImage.getHeight() + ")");
             } catch (final IOException e) {
                 logInfo("Cannot read image from File " + filePath + ". Stack trace\n");
                 e.printStackTrace(System.out);
@@ -149,27 +171,31 @@ public class Main {
         } else {
             logInfo("File " + filePath + " does not exist, or is unreadable");
         }
-        if (bufferedImage == null) {
+        if (newImage == null) {
             logInfo("File " + filePath + " is not a valid image");
         }
         return newImage;
     }
 
     void displayImage(ActionEvent actionEvent, boolean original, boolean ideal) {
-
         final int number = Integer.parseInt(actionEvent.getActionCommand());
         final String filePath = imageFileName(number, original, ideal);
 
         logInfo("trying to load file: " + filePath);
         bufferedImage = loadImage(filePath);
-        if (bufferedImage == null) {
-            return;
+        if (bufferedImage != null) {
+            bufferedImage = resizeImageIfBig(bufferedImage, 640, 480);
+            imageHolder.setImage(bufferedImage);
+            image.setIcon(imageHolder);
+            imageFrame.pack();
+            imageFrame.repaint(30);
         }
-        bufferedImage = resizeImageIfBig(bufferedImage, 640, 480);
-        imageHolder.setImage(bufferedImage);
-        image.setIcon(imageHolder);
-        imageFrame.pack();
-        imageFrame.repaint(30);
+        refreshInfoPanel();
+    }
+
+    void refreshInfoPanel() {
+        final String output = String.join("\n", imageData);
+        infoView.setText(output);
     }
 
     BufferedImage resizeImageIfBig(BufferedImage inputImage, int targetMaxWidth, int targetMaxHeight) {
@@ -201,6 +227,8 @@ public class Main {
             int offsetY = (targetMaxHeight - newHeight)/2;
             g2d.drawImage(originalImage, offsetX, offsetY, null);
             g2d.dispose();
+
+            imageData.add("New image size (" + newWidth + ", " + newHeight + ")");
             return resizedImage;
         }
         return inputImage;
@@ -212,10 +240,10 @@ public class Main {
     JFrame imageFrame;
     JTextPane logView;
     JPanel infoPane;
-
     JTextPane infoView;
 
     List<String> logData = new ArrayList<>();
+    List<String> imageData = new ArrayList<>();
 
     public Main() {
         imageFrame = new JFrame("Image viewer");
@@ -228,12 +256,13 @@ public class Main {
         infoView.setPreferredSize(new Dimension(400, 200));
         infoView.setBorder(new TitledBorder("Information"));
         infoView.setEditable(false);
-        infoView.setMinimumSize(new Dimension(200, 200));
+        infoView.setAutoscrolls(true);
 
-        logView.setText("abbce\ndefgh");
+        logView.setText("Dice detector loaded");
         logView.setBorder(new TitledBorder("App logs"));
         logView.setEditable(false);
-        infoView.setPreferredSize(new Dimension(400, 200));
+        logView.setPreferredSize(new Dimension(400, 200));
+        logView.setAutoscrolls(true);
 
         infoPane.add(infoView);
         infoPane.add(logView);
@@ -254,7 +283,7 @@ public class Main {
         logData.add(str);
         final String output = String.join("\n", logData);
         logView.setText(output);
-        System.out.print(str);
+        System.out.println(str);
     }
 
     private JMenuBar initMenu() {
