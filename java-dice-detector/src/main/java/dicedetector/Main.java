@@ -2,15 +2,18 @@ package dicedetector;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
-import java.lang.ref.Reference;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
+
 
     final double[][] blurFilter = {
         {0.0625, 0.125, 0.0625},
@@ -21,7 +24,7 @@ public class Main {
     private void updateImage(final ActionEvent actionEvent) {
         int threshold = 3 * 170;
 
-        System.out.println("updating the image");
+        logInfo("updating the image");
         if (bufferedImage!=null) {
             WritableRaster writableRaster = bufferedImage.getRaster();
             int[] pixel = new int[4];
@@ -69,8 +72,8 @@ public class Main {
                         for(int j = 0; j < 3; j++) {
                             int pixRow = y+i-1;
                             int pixCol = x+j-1;
-                            
-                            if(pixCol > 0 && pixRow > 0 && pixCol < width && pixRow < height) { //if this is a valid pixel location we add its value to the running sum 
+
+                            if(pixCol > 0 && pixRow > 0 && pixCol < width && pixRow < height) { //if this is a valid pixel location we add its value to the running sum
                                 referenceRaster.getPixel(pixCol, pixRow, tempPixel);
                                 outPixel[0] += (tempPixel[0]*blurFilter[i][j]);
                                 outPixel[1] += (tempPixel[1]*blurFilter[i][j]);
@@ -85,8 +88,8 @@ public class Main {
         }
         imageFrame.repaint();
     }
-    void displayImage(ActionEvent actionEvent, boolean original, boolean ideal) {
 
+    String imageFileName(final int number, final boolean original, final boolean ideal) {
         String filePath = "../robo-dice-roller/images";
         String small = "";
 
@@ -97,7 +100,6 @@ public class Main {
             filePath += "/small";
             small = "_small";
         }
-        final int number = Integer.parseInt(actionEvent.getActionCommand());
 
         switch (number) {
             case 1:
@@ -119,7 +121,8 @@ public class Main {
                 filePath += "/six_";
                 break;
             default:
-                System.out.println("Unexpected face name " + number);
+                logInfo("Unexpected face name " + number);
+                break;
         }
         if(ideal)
             filePath += "ideal";
@@ -128,25 +131,40 @@ public class Main {
 
 
         filePath = filePath + small + ".jpg";
-        System.out.println("trying to load file: " + filePath);
-        File file = new File(filePath);
+        return filePath;
+    }
+
+    BufferedImage loadImage(final String filePath) {
+        logInfo("trying to load file: " + filePath);
+
+        BufferedImage newImage = null;
+        final File file = new File(filePath);
         if (file.exists() && file.canRead()) {
             try {
-                bufferedImage = ImageIO.read(file);
-            } catch (IOException e) {
-                System.out.println("Cannot read image from File " + filePath + ". Stack trace\n");
+                newImage = ImageIO.read(file);
+            } catch (final IOException e) {
+                logInfo("Cannot read image from File " + filePath + ". Stack trace\n");
                 e.printStackTrace(System.out);
-                return;
             }
         } else {
-            System.out.println("File " + filePath + " does not exist, or is unreadable");
-            return;
+            logInfo("File " + filePath + " does not exist, or is unreadable");
         }
         if (bufferedImage == null) {
-            System.out.println("File " + filePath + " is not a valid image");
+            logInfo("File " + filePath + " is not a valid image");
+        }
+        return newImage;
+    }
+
+    void displayImage(ActionEvent actionEvent, boolean original, boolean ideal) {
+
+        final int number = Integer.parseInt(actionEvent.getActionCommand());
+        final String filePath = imageFileName(number, original, ideal);
+
+        logInfo("trying to load file: " + filePath);
+        bufferedImage = loadImage(filePath);
+        if (bufferedImage == null) {
             return;
         }
-
         bufferedImage = resizeImageIfBig(bufferedImage, 640, 480);
         imageHolder.setImage(bufferedImage);
         image.setIcon(imageHolder);
@@ -165,7 +183,7 @@ public class Main {
             int newWidth = (int)(width * scale);
             int newHeight = (int)(height * scale);
 
-            System.out.println("w=" + width + ", tw=" + targetMaxWidth + " h=" + height + " th=" + targetMaxHeight + " scaleW=" + widthScale + "scaleH=" + heightScale);
+            logInfo("w=" + width + ", tw=" + targetMaxWidth + " h=" + height + " th=" + targetMaxHeight + " scaleW=" + widthScale + "scaleH=" + heightScale);
 
             Image originalImage = inputImage.getScaledInstance(newWidth, (int)(height * scale), Image.SCALE_SMOOTH);
 
@@ -192,20 +210,51 @@ public class Main {
     ImageIcon imageHolder;
     JLabel image;
     JFrame imageFrame;
+    JTextPane logView;
+    JPanel infoPane;
+
+    JTextPane infoView;
+
+    List<String> logData = new ArrayList<>();
 
     public Main() {
         imageFrame = new JFrame("Image viewer");
 
+        infoPane = new JPanel();
+        infoView = new JTextPane();
+        logView = new JTextPane();
+
+        infoView.setText("Information");
+        infoView.setPreferredSize(new Dimension(400, 200));
+        infoView.setBorder(new TitledBorder("Information"));
+        infoView.setEditable(false);
+        infoView.setMinimumSize(new Dimension(200, 200));
+
+        logView.setText("abbce\ndefgh");
+        logView.setBorder(new TitledBorder("App logs"));
+        logView.setEditable(false);
+        infoView.setPreferredSize(new Dimension(400, 200));
+
+        infoPane.add(infoView);
+        infoPane.add(logView);
+        infoPane.setLayout(new GridLayout(0,1));
+
         image = new JLabel();
         imageHolder = new ImageIcon();
-
+        imageFrame.add(infoPane);
         imageFrame.add(image);
-
         imageFrame.setJMenuBar(initMenu());
 
         imageFrame.setSize(640, 480);
         imageFrame.setLayout(new FlowLayout());
         imageFrame.setVisible(true);
+    }
+
+    public void logInfo(final String str) {
+        logData.add(str);
+        final String output = String.join("\n", logData);
+        logView.setText(output);
+        System.out.print(str);
     }
 
     private JMenuBar initMenu() {
