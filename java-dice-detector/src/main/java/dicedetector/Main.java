@@ -69,39 +69,44 @@ public class Main {
     private JMenuBar initMenu() {
 
         JMenu manipulationMenu = new JMenu("modify image");
-        JMenuItem bwUpdate = new JMenuItem("convert to b/w");
-        bwUpdate.addActionListener(this::thresholdImage);
-        manipulationMenu.add(bwUpdate);
+        JMenuItem menuItem = new JMenuItem("convert to b/w");
+        menuItem.addActionListener(this::thresholdImage);
+        manipulationMenu.add(menuItem);
 
-        JMenuItem blur = new JMenuItem("blur image");
-        blur.addActionListener(this::blurImage);
-        manipulationMenu.add(blur);
+        menuItem = new JMenuItem("blur image");
+        menuItem.addActionListener(this::blurImage);
+        manipulationMenu.add(menuItem);
 
-        JMenuItem blur5 = new JMenuItem("blur 5x5 image");
-        blur5.addActionListener(this::blurImage5);
-        manipulationMenu.add(blur5);
+        menuItem = new JMenuItem("blur 5x5 image");
+        menuItem.addActionListener(this::blurImage5);
+        manipulationMenu.add(menuItem);
 
-        JMenuItem strongBlur = new JMenuItem("strong blur");
-        strongBlur.addActionListener(this::strongBlur);
-        manipulationMenu.add(strongBlur);
+        menuItem = new JMenuItem("strong blur");
+        menuItem.addActionListener(this::strongBlur);
+        manipulationMenu.add(menuItem);
 
-        JMenuItem edge = new JMenuItem("edge image");
-        edge.addActionListener(this::edgeImage);
-        manipulationMenu.add(edge);
+        menuItem = new JMenuItem("edge image");
+        menuItem.addActionListener(this::edgeImage);
+        manipulationMenu.add(menuItem);
 
-        JMenuItem combo = new JMenuItem("blur/thresh/edge");
-        combo.addActionListener(this::comboImage);
-        manipulationMenu.add(combo);
+        menuItem = new JMenuItem("blur/thresh/edge");
+        menuItem.addActionListener(this::comboImage);
+        manipulationMenu.add(menuItem);
 
-        JMenuItem sharp = new JMenuItem("sharp");
-        sharp.addActionListener( actionEvent
+        menuItem = new JMenuItem("sharp");
+        menuItem.addActionListener( actionEvent
                  -> runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.sharpenFilter), "sharp"));
-        manipulationMenu.add(sharp);
+        manipulationMenu.add(menuItem);
 
-        JMenuItem unsharp = new JMenuItem("unsharp");
-        unsharp.addActionListener( actionEvent
+        menuItem = new JMenuItem("unsharp");
+        menuItem.addActionListener( actionEvent
                  -> runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.unsharpMaskFilter), "unsharp"));
-        manipulationMenu.add(unsharp);
+        manipulationMenu.add(menuItem);
+
+        menuItem = new JMenuItem("detectThing");
+        menuItem.addActionListener( actionEvent
+                 -> runFilterAction(sourceImage -> filterTools.scanRowColImage(sourceImage), "Detect thing"));
+        manipulationMenu.add(menuItem);
 
         JMenu imageSubMenu = new JMenu("Load Image");
 
