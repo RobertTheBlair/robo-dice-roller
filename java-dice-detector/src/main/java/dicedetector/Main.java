@@ -85,6 +85,20 @@ public class Main {
         edge.addActionListener(this::edgeImage);
         manipulationMenu.add(edge);
 
+        JMenuItem combo = new JMenuItem("blur/thresh/edge");
+        combo.addActionListener(this::comboImage);
+        manipulationMenu.add(combo);
+
+        JMenuItem sharp = new JMenuItem("sharp");
+        sharp.addActionListener( actionEvent
+                 -> runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.sharpenFilter), "sharp"));
+        manipulationMenu.add(sharp);
+
+        JMenuItem unsharp = new JMenuItem("unsharp");
+        unsharp.addActionListener( actionEvent
+                 -> runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.unsharpMaskFilter), "unsharp"));
+        manipulationMenu.add(unsharp);
+
         JMenu imageSubMenu = new JMenu("Load Image");
 
         for (int i=1;i<=6; i++) {
@@ -131,6 +145,15 @@ public class Main {
     void edgeImage(final ActionEvent actionEvent) {
         runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.edgeFilter), "edge");
     }
+
+    void comboImage(final ActionEvent actionEvent) {
+        runFilterAction(sourceImage -> {
+            BufferedImage i = filterTools.runMatrixFilter(sourceImage, FilterTools.blurFilter);
+            i = filterTools.thresholdImage(i, 170);
+            return filterTools.runMatrixFilter(i, FilterTools.edgeFilter);
+        }, "combo");
+    }
+
 
     String imageFileName(final int number, final boolean original, final boolean ideal) {
         String filePath = "../robo-dice-roller/images";
