@@ -81,6 +81,10 @@ public class Main {
         blur5.addActionListener(this::blurImage5);
         manipulationMenu.add(blur5);
 
+        JMenuItem strongBlur = new JMenuItem("strong blur");
+        strongBlur.addActionListener(this::strongBlur);
+        manipulationMenu.add(strongBlur);
+
         JMenuItem edge = new JMenuItem("edge image");
         edge.addActionListener(this::edgeImage);
         manipulationMenu.add(edge);
@@ -141,6 +145,9 @@ public class Main {
     void blurImage5(final ActionEvent actionEvent) {
         runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.blur5x5Filter), "5x5 blur");
     }
+    void strongBlur(final ActionEvent actionEvent) {
+        runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.strongBlurFilter), "Strong blur");
+    }
 
     void edgeImage(final ActionEvent actionEvent) {
         runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.edgeFilter), "edge");
@@ -149,6 +156,7 @@ public class Main {
     void comboImage(final ActionEvent actionEvent) {
         runFilterAction(sourceImage -> {
             BufferedImage i = filterTools.runMatrixFilter(sourceImage, FilterTools.blurFilter);
+            i = filterTools.runMatrixFilter(i, FilterTools.blurFilter); //run it twice for better filtering??
             i = filterTools.thresholdImage(i, 170);
             return filterTools.runMatrixFilter(i, FilterTools.edgeFilter);
         }, "combo");
