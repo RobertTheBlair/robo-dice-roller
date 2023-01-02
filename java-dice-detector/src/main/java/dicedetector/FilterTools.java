@@ -49,12 +49,12 @@ public class FilterTools {
     };
 
     public interface ImageAction {
-        BufferedImage apply(BufferedImage sourceImaage);
+        ProcessedImage apply(ProcessedImage sourceImaage);
     }
 
-    public BufferedImage runMatrixFilter(BufferedImage inputImage, double[][] filter) {
+    public ProcessedImage runMatrixFilter(ProcessedImage inputImage, double[][] filter) {
 
-        WritableRaster referenceRaster = inputImage.getRaster();
+        WritableRaster referenceRaster = inputImage.image.getRaster();
         int width = referenceRaster.getWidth();
         int height = referenceRaster.getHeight();
         BufferedImage newBufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -68,7 +68,8 @@ public class FilterTools {
                 blurredRaster.setPixel(x, y, outPixel);
             }
         }
-        return newBufferedImage;
+        inputImage.image = newBufferedImage;
+        return inputImage;
     }
     void applyFilterAtPixel(Raster referenceRaster, int x, int y, double[][] filter, int[] outPixel, int[] tempPixel) {
         int width = referenceRaster.getWidth();
@@ -117,9 +118,9 @@ public class FilterTools {
     }
 
 
-    BufferedImage thresholdImage(BufferedImage inputImage, int threshold) {
+    ProcessedImage thresholdImage(ProcessedImage inputImage, int threshold) {
         int rgbThreshold = 3 * threshold;
-        WritableRaster writableRaster = inputImage.getRaster();
+        WritableRaster writableRaster = inputImage.image.getRaster();
         int[] pixel = new int[4];
         int[] outPixel = new int[4];
         int width = writableRaster.getWidth();
@@ -144,7 +145,8 @@ public class FilterTools {
         return inputImage;
     }
 
-    BufferedImage resizeImageIfBig(BufferedImage inputImage, int targetMaxWidth, int targetMaxHeight) {
+    ProcessedImage resizeImageIfBig(ProcessedImage image, int targetMaxWidth, int targetMaxHeight) {
+        BufferedImage inputImage = image.image;
         int width = inputImage.getWidth();
         int height = inputImage.getHeight();
 
@@ -171,9 +173,8 @@ public class FilterTools {
             int offsetY = (targetMaxHeight - newHeight)/2;
             g2d.drawImage(originalImage, offsetX, offsetY, null);
             g2d.dispose();
-
-            return resizedImage;
+            image.image = resizedImage;
         }
-        return inputImage;
+        return image;
     }
 }
