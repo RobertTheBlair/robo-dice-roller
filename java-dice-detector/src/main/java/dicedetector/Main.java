@@ -20,8 +20,41 @@ public class Main {
         {0.125, 0.25, 0.125},
         {0.0625, 0.125, 0.0625}
     };
+    final double[][] blur5x5Filter = {
+            {1/256., 4/256., 6/256., 4/256., 1/256.},
+            {4/256., 16/256., 24/256., 16/256., 4/256.},
+            {6/256., 24/256., 36/256., 24/256., 6/256.},
+            {4/256., 16/256., 24/256., 16/256., 4/256.},
+            {1/256., 4/256., 6/256., 4/256., 1/256.},
+    };
 
-    private void updateImage(final ActionEvent actionEvent) {
+    final double[][] edgeFilter = {
+            {0, -1, 0},
+            {-1, 4, -1},
+            {0, -1, 0}
+    };
+
+    private BufferedImage runFilter(BufferedImage inputImage, double[][] filter) {
+
+        WritableRaster referenceRaster = inputImage.getRaster();
+        int width = referenceRaster.getWidth();
+        int height = referenceRaster.getHeight();
+        BufferedImage newBufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        WritableRaster blurredRaster = newBufferedImage.getRaster();
+        int[] tempPixel = new int[4];
+        int[] outPixel = new int[4];
+        /* for each pixel, run a matrix to get a new output pixel based on neighbors */
+        for (int y=0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                applyFilterAtPixel(referenceRaster, x, y, filter, outPixel, tempPixel);
+                blurredRaster.setPixel(x, y, outPixel);
+            }
+        }
+        return newBufferedImage;
+    }
+
+
+    private void thresholdImage(final ActionEvent actionEvent) {
         int threshold = 3 * 170;
 
         logInfo("updating the image");
@@ -60,22 +93,37 @@ public class Main {
     void blurImage(final ActionEvent actionEvent) {
         if (bufferedImage!=null) {
             long startTime = System.currentTimeMillis();
-            WritableRaster referenceRaster = bufferedImage.getRaster();
-            WritableRaster blurredRaster = referenceRaster; // we will be updating blur a
-            int width = referenceRaster.getWidth();
-            int height = referenceRaster.getHeight();
-            int[] tempPixel = new int[4];
-            int[] outPixel = new int[4];
-            /* for each pixel, we average its RGB values with the surrounding pixels if they exist */
-            for (int y=0; y < height; y++) { //jesus christ 4 4loops!!!
-                for (int x = 0; x < width; x++) {
-                    applyFilterAtPixel(referenceRaster, x, y, blurFilter, outPixel, tempPixel);
-                    blurredRaster.setPixel(x, y, outPixel);
-                }
-            }
-            referenceRaster = blurredRaster;
+            BufferedImage newBufferedImage = runFilter(bufferedImage, blurFilter);
             long endTime = System.currentTimeMillis();
             imageData.add("Blur action: duration MS = " + (endTime - startTime));
+            bufferedImage = newBufferedImage;
+            imageHolder.setImage(bufferedImage);
+        }
+        refreshInfoPanel();
+        imageFrame.repaint();
+
+    }
+    void blurImage5(final ActionEvent actionEvent) {
+        if (bufferedImage!=null) {
+            long startTime = System.currentTimeMillis();
+            BufferedImage newBufferedImage = runFilter(bufferedImage, blur5x5Filter);
+            long endTime = System.currentTimeMillis();
+            imageData.add("Blur action: duration MS = " + (endTime - startTime));
+            bufferedImage = newBufferedImage;
+            imageHolder.setImage(bufferedImage);
+        }
+        refreshInfoPanel();
+        imageFrame.repaint();
+    }
+
+    void edgeImage(final ActionEvent actionEvent) {
+        if (bufferedImage!=null) {
+            long startTime = System.currentTimeMillis();
+            BufferedImage newBufferedImage = runFilter(bufferedImage, edgeFilter);
+            long endTime = System.currentTimeMillis();
+            imageData.add("Edge action: duration MS = " + (endTime - startTime));
+            bufferedImage = newBufferedImage;
+            imageHolder.setImage(bufferedImage);
         }
         refreshInfoPanel();
         imageFrame.repaint();
@@ -84,14 +132,17 @@ public class Main {
     void applyFilterAtPixel(Raster referenceRaster, int x, int y, double[][] filter, int[] outPixel, int[] tempPixel) {
         int width = referenceRaster.getWidth();
         int height = referenceRaster.getHeight();
+        // assume filter h/w is same, and odd
+        int size = filter.length;
+        int mid = size/2; // round down - so 3 goes to 1
 
         double r = 0;
         double g = 0;
         double b = 0;
-        for(int i = 0; i < 3; i++) {
-            for(int j = 0; j < 3; j++) {
-                int pixRow = y+i-1;
-                int pixCol = x+j-1;
+        for(int i = 0; i < size; i++) {
+            for(int j = 0; j < size; j++) {
+                int pixRow = y+i-mid;
+                int pixCol = x+j-mid;
 
                 if(pixCol > 0 && pixRow > 0 && pixCol < width && pixRow < height) { //if this is a valid pixel location we add its value to the running sum
                     referenceRaster.getPixel(pixCol, pixRow, tempPixel);
@@ -101,10 +152,19 @@ public class Main {
                 }
             }
         }
-        outPixel[0] = (int)r;
-        outPixel[1] = (int)g;
-        outPixel[2] = (int)b;
+        outPixel[0] = clampValue(r);
+        outPixel[1] = clampValue(g);
+        outPixel[2] = clampValue(b);
         outPixel[3] = 255;
+    }
+
+    int clampValue(double input) {
+        if (input<0) {
+            return 0;
+        } else if (input > 255) {
+            return 255;
+        }
+        return (int)input;
     }
 
     String imageFileName(final int number, final boolean original, final boolean ideal) {
@@ -181,7 +241,6 @@ public class Main {
         final int number = Integer.parseInt(actionEvent.getActionCommand());
         final String filePath = imageFileName(number, original, ideal);
 
-        logInfo("trying to load file: " + filePath);
         bufferedImage = loadImage(filePath);
         if (bufferedImage != null) {
             bufferedImage = resizeImageIfBig(bufferedImage, 640, 480);
@@ -290,11 +349,20 @@ public class Main {
 
         JMenu manipulationMenu = new JMenu("options");
         JMenuItem bwUpdate = new JMenuItem("convert to b/w");
+        bwUpdate.addActionListener(this::thresholdImage);
+        manipulationMenu.add(bwUpdate);
+
         JMenuItem blur = new JMenuItem("blur image");
         blur.addActionListener(this::blurImage);
-        bwUpdate.addActionListener(this::updateImage);
-        manipulationMenu.add(bwUpdate);
         manipulationMenu.add(blur);
+
+        JMenuItem blur5 = new JMenuItem("blur 5x5 image");
+        blur5.addActionListener(this::blurImage5);
+        manipulationMenu.add(blur5);
+
+        JMenuItem edge = new JMenuItem("edge image");
+        edge.addActionListener(this::edgeImage);
+        manipulationMenu.add(edge);
 
         JMenu imageSubMenu = new JMenu("Load Images");
 
