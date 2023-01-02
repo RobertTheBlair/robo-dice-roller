@@ -34,7 +34,11 @@ public class Main {
             {0, -1, 0}
     };
 
-    private BufferedImage runFilter(BufferedImage inputImage, double[][] filter) {
+    public interface ImageAction {
+        BufferedImage apply(BufferedImage sourceImaage);
+    }
+
+    private BufferedImage runMatrixFilter(BufferedImage inputImage, double[][] filter) {
 
         WritableRaster referenceRaster = inputImage.getRaster();
         int width = referenceRaster.getWidth();
@@ -53,81 +57,61 @@ public class Main {
         return newBufferedImage;
     }
 
-
-    private void thresholdImage(final ActionEvent actionEvent) {
-        int threshold = 3 * 170;
-
-        logInfo("updating the image");
+    void runMatrixFilter(ImageAction action, String filterName) {
         if (bufferedImage!=null) {
             long startTime = System.currentTimeMillis();
-            WritableRaster writableRaster = bufferedImage.getRaster();
-            int[] pixel = new int[4];
-            int[] outPixel = new int[4];
-            int width = writableRaster.getWidth();
-            int height = writableRaster.getHeight();
-            for (int y=0;y<height; y++) {
-                for (int x = 0; x< width; x++) {
-                    writableRaster.getPixel(x, y, pixel);
-                    int pixelSum = pixel[0] + pixel[1] + pixel[2];
-                    if (pixelSum > threshold) {
-                        outPixel[0] = 255;
-                        outPixel[1] = 255;
-                        outPixel[2] = 255;
-                    } else {
-                        outPixel[0] = 0;
-                        outPixel[1] = 0;
-                        outPixel[2] = 0;
-                    }
-
-                    outPixel[3] = 255;
-                    writableRaster.setPixel(x, y, outPixel);
-                }
-            }
+            BufferedImage newBufferedImage = action.apply(bufferedImage);
             long endTime = System.currentTimeMillis();
-            imageData.add("Threshold b/w level=" + threshold/3 + ", duration MS = " + (endTime - startTime));
+            imageData.add(filterName + " action: duration MS = " + (endTime - startTime));
+            bufferedImage = newBufferedImage;
+            imageHolder.setImage(bufferedImage);
         }
         refreshInfoPanel();
         imageFrame.repaint();
+    }
+
+    private void thresholdImage(final ActionEvent actionEvent) {
+        runMatrixFilter(image -> thresholdImage(image, 170), "convert to b/w 170");
     }
 
     void blurImage(final ActionEvent actionEvent) {
-        if (bufferedImage!=null) {
-            long startTime = System.currentTimeMillis();
-            BufferedImage newBufferedImage = runFilter(bufferedImage, blurFilter);
-            long endTime = System.currentTimeMillis();
-            imageData.add("Blur action: duration MS = " + (endTime - startTime));
-            bufferedImage = newBufferedImage;
-            imageHolder.setImage(bufferedImage);
-        }
-        refreshInfoPanel();
-        imageFrame.repaint();
-
+        runMatrixFilter(image -> runMatrixFilter(image, blurFilter), "3x3 blur");
     }
     void blurImage5(final ActionEvent actionEvent) {
-        if (bufferedImage!=null) {
-            long startTime = System.currentTimeMillis();
-            BufferedImage newBufferedImage = runFilter(bufferedImage, blur5x5Filter);
-            long endTime = System.currentTimeMillis();
-            imageData.add("Blur action: duration MS = " + (endTime - startTime));
-            bufferedImage = newBufferedImage;
-            imageHolder.setImage(bufferedImage);
-        }
-        refreshInfoPanel();
-        imageFrame.repaint();
+        runMatrixFilter(image -> runMatrixFilter(image, blur5x5Filter), "5x5 blur");
     }
 
     void edgeImage(final ActionEvent actionEvent) {
-        if (bufferedImage!=null) {
-            long startTime = System.currentTimeMillis();
-            BufferedImage newBufferedImage = runFilter(bufferedImage, edgeFilter);
-            long endTime = System.currentTimeMillis();
-            imageData.add("Edge action: duration MS = " + (endTime - startTime));
-            bufferedImage = newBufferedImage;
-            imageHolder.setImage(bufferedImage);
-        }
-        refreshInfoPanel();
-        imageFrame.repaint();
+        runMatrixFilter(image -> runMatrixFilter(image, edgeFilter), "edge");
     }
+
+    BufferedImage thresholdImage(BufferedImage inputImage, int threshold) {
+        int rgbThreshold = 3 * threshold;
+        WritableRaster writableRaster = inputImage.getRaster();
+        int[] pixel = new int[4];
+        int[] outPixel = new int[4];
+        int width = writableRaster.getWidth();
+        int height = writableRaster.getHeight();
+        for (int y=0;y<height; y++) {
+            for (int x = 0; x< width; x++) {
+                writableRaster.getPixel(x, y, pixel);
+                int pixelSum = pixel[0] + pixel[1] + pixel[2];
+                if (pixelSum > rgbThreshold) {
+                    outPixel[0] = 255;
+                    outPixel[1] = 255;
+                    outPixel[2] = 255;
+                } else {
+                    outPixel[0] = 0;
+                    outPixel[1] = 0;
+                    outPixel[2] = 0;
+                }
+                outPixel[3] = 255;
+                writableRaster.setPixel(x, y, outPixel);
+            }
+        }
+        return inputImage;
+    }
+
 
     void applyFilterAtPixel(Raster referenceRaster, int x, int y, double[][] filter, int[] outPixel, int[] tempPixel) {
         int width = referenceRaster.getWidth();
