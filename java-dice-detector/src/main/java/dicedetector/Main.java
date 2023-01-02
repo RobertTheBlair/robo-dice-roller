@@ -13,7 +13,7 @@ import java.util.List;
 
 public class Main {
 
-    BufferedImage bufferedImage;
+    ProcessedImage processedImage;
     ImageIcon imageHolder;
     JLabel image;
     JFrame imageFrame;
@@ -119,13 +119,12 @@ public class Main {
     }
 
     void runFilterAction(FilterTools.ImageAction action, String filterName) {
-        if (bufferedImage!=null) {
+        if (processedImage!=null) {
             long startTime = System.currentTimeMillis();
-            BufferedImage newBufferedImage = action.apply(bufferedImage);
+             action.apply(processedImage);
             long endTime = System.currentTimeMillis();
             imageData.add(filterName + " action: duration MS = " + (endTime - startTime));
-            bufferedImage = newBufferedImage;
-            imageHolder.setImage(bufferedImage);
+            imageHolder.setImage(processedImage.image);
         }
         refreshInfoPanel();
         imageFrame.repaint();
@@ -148,9 +147,9 @@ public class Main {
 
     void comboImage(final ActionEvent actionEvent) {
         runFilterAction(sourceImage -> {
-            BufferedImage i = filterTools.runMatrixFilter(sourceImage, FilterTools.blurFilter);
-            i = filterTools.thresholdImage(i, 170);
-            return filterTools.runMatrixFilter(i, FilterTools.edgeFilter);
+            filterTools.runMatrixFilter(sourceImage, FilterTools.blurFilter);
+            filterTools.thresholdImage(sourceImage, 170);
+            return filterTools.runMatrixFilter(sourceImage, FilterTools.edgeFilter);
         }, "combo");
     }
 
@@ -229,11 +228,16 @@ public class Main {
         final int number = Integer.parseInt(actionEvent.getActionCommand());
         final String filePath = imageFileName(number, original, ideal);
 
-        bufferedImage = loadImage(filePath);
+        BufferedImage bufferedImage = loadImage(filePath);
         if (bufferedImage != null) {
-            bufferedImage = filterTools.resizeImageIfBig(bufferedImage, 640, 480);
+            ProcessedImage processedImage = new ProcessedImage();
+            processedImage.fileName = filePath;
+            processedImage.image = bufferedImage;
+            processedImage.originalImage = bufferedImage;
+            this.processedImage = processedImage;
+            filterTools.resizeImageIfBig(processedImage, 640, 480);
             imageData.add("New image size (" + bufferedImage.getWidth() + ", " + bufferedImage.getHeight() + ")");
-            imageHolder.setImage(bufferedImage);
+            imageHolder.setImage(processedImage.image);
             image.setIcon(imageHolder);
             imageFrame.pack();
             imageFrame.repaint(30);
