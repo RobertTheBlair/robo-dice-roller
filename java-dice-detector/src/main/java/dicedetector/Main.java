@@ -128,6 +128,12 @@ public class Main {
 
         JMenu imageSubMenu = new JMenu("Load Image");
 
+        JMenu imageOjectMenu = new JMenu("Image Objects");
+
+        JMenuItem findDie = new JMenuItem("find Die");
+
+        findDie.addActionListener(this::findDieImage);
+
         for (int i=1;i<=6; i++) {
             JMenuItem imageItem = imageSubMenu.add(new JMenuItem("Load Small Ideal " + i));
             imageItem.addActionListener((ActionEvent e) -> displayImage(e, false, true));
@@ -155,6 +161,10 @@ public class Main {
         }
         refreshInfoPanel();
         imageFrame.repaint();
+    }
+    /* unfinished */
+    void findDieImage(final ActionEvent actionEvent) {
+        //todo, find die object and store it in the image variable.
     }
 
     private void thresholdImage(final ActionEvent actionEvent) {

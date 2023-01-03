@@ -13,11 +13,11 @@ public class FilterTools {
             {0.0625, 0.125, 0.0625}
     };
     public static final double[][] strongBlurFilter = { //sigma of 1.5
-        {0.0120, 0.0233, 0.0291, 0.0233, 0.0120},
-        {0.0233, 0.0454, 0.0566, 0.0454, 0.0233},
-        {0.0291, 0.0566, 0.0707, 0.0566, 0.0291},
-        {0.0233, 0.0454, 0.0566, 0.0454, 0.0233},
-        {0.0120, 0.0233, 0.0291, 0.0233, 0.0120},
+        {0.0150, 0.0286, 0.0354, 0.0286, 0.0150},
+        {0.0286, 0.0543, 0.0673, 0.0543, 0.0286},
+        {0.0354, 0.0673, 0.0834, 0.0673, 0.0354},
+        {0.0286, 0.0543, 0.0673, 0.0543, 0.0286},
+        {0.0150, 0.0286, 0.0354, 0.0286, 0.0150,},
 };
 
     public static final double[][] blur5x5Filter = {
@@ -126,7 +126,7 @@ public class FilterTools {
         int width = writableRaster.getWidth();
         int height = writableRaster.getHeight();
         for (int y=0;y<height; y++) {
-            for (int x = 0; x< width; x++) {
+            for (int x = 0; x < width; x++) {
                 writableRaster.getPixel(x, y, pixel);
                 int pixelSum = pixel[0] + pixel[1] + pixel[2];
                 if (pixelSum > rgbThreshold) {
