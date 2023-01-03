@@ -69,39 +69,57 @@ public class Main {
     private JMenuBar initMenu() {
 
         JMenu manipulationMenu = new JMenu("modify image");
+
+        
         JMenuItem bwUpdate = new JMenuItem("convert to b/w");
         bwUpdate.addActionListener(this::thresholdImage);
         manipulationMenu.add(bwUpdate);
 
+        JMenu subBlurMenu = new JMenu("blur options");
+
         JMenuItem blur = new JMenuItem("blur image");
         blur.addActionListener(this::blurImage);
-        manipulationMenu.add(blur);
+        subBlurMenu.add(blur);
 
         JMenuItem blur5 = new JMenuItem("blur 5x5 image");
         blur5.addActionListener(this::blurImage5);
-        manipulationMenu.add(blur5);
+        subBlurMenu.add(blur5);
 
         JMenuItem strongBlur = new JMenuItem("strong blur");
         strongBlur.addActionListener(this::strongBlur);
-        manipulationMenu.add(strongBlur);
+        subBlurMenu.add(strongBlur);
+
+        manipulationMenu.add(subBlurMenu);
 
         JMenuItem edge = new JMenuItem("edge image");
         edge.addActionListener(this::edgeImage);
         manipulationMenu.add(edge);
 
-        JMenuItem combo = new JMenuItem("blur/thresh/edge");
-        combo.addActionListener(this::comboImage);
-        manipulationMenu.add(combo);
+        JMenu subComboMenu = new JMenu("combo options");
+
+        JMenuItem smallCombo = new JMenuItem("soft_blur/thresh/edge");
+        smallCombo.addActionListener(this::smallComboImage);
+        subComboMenu.add(smallCombo);
+
+        JMenuItem largeCombo = new JMenuItem("sharp/strong_blur/thresh/edge");
+        largeCombo.addActionListener(this::largeComboImage);
+        subComboMenu.add(largeCombo);
+
+        manipulationMenu.add(subComboMenu);
+
+        JMenu sharpBlurMenu = new JMenu("sharp options");
 
         JMenuItem sharp = new JMenuItem("sharp");
         sharp.addActionListener( actionEvent
                  -> runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.sharpenFilter), "sharp"));
-        manipulationMenu.add(sharp);
+        sharpBlurMenu.add(sharp);
 
         JMenuItem unsharp = new JMenuItem("unsharp");
         unsharp.addActionListener( actionEvent
                  -> runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.unsharpMaskFilter), "unsharp"));
-        manipulationMenu.add(unsharp);
+        sharpBlurMenu.add(unsharp);
+
+        manipulationMenu.add(sharpBlurMenu);
 
         JMenu imageSubMenu = new JMenu("Load Image");
 
@@ -152,9 +170,18 @@ public class Main {
         runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.edgeFilter), "edge");
     }
 
-    void comboImage(final ActionEvent actionEvent) {
+    void smallComboImage(final ActionEvent actionEvent) {
         runFilterAction(sourceImage -> {
             filterTools.runMatrixFilter(sourceImage, FilterTools.blurFilter);
+            filterTools.thresholdImage(sourceImage, 170);
+            return filterTools.runMatrixFilter(sourceImage, FilterTools.edgeFilter);
+        }, "combo");
+    }
+
+    void largeComboImage(final ActionEvent actionEvent) {
+        runFilterAction(sourceImage -> {
+            filterTools.runMatrixFilter(sourceImage, FilterTools.sharpenFilter);
+            filterTools.runMatrixFilter(sourceImage, FilterTools.strongBlurFilter);
             filterTools.thresholdImage(sourceImage, 170);
             return filterTools.runMatrixFilter(sourceImage, FilterTools.edgeFilter);
         }, "combo");
@@ -261,3 +288,14 @@ public class Main {
         new Main();
     }
 }
+
+/* Notes
+ * 1/2/23 -> For getting consistent "straight" lines for the die, I run sharp,strongblur, convert b/w, edge.
+ *           This process detected fairly good edges in all 12 example images (both unideal and ideal)
+ *      
+ *           Something to note going forward into the "die detection" phase of our work is that for all the example die,
+ *           there were AT LEAST 2 sides that were mostly unobstructed linear edges that we might want to use for our algo. 
+ *           Edges however are curved at the corners and so having "straight lines" will be difficult to detect.
+ * 
+ *           Next Steps for me are to detect a dice "object" as a contiguous square block of white pixels, and detect the pips as contiguous circular blocks of white pixels.
+ */
