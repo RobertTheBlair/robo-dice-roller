@@ -20,6 +20,13 @@ public class FilterTools {
         {0.0150, 0.0286, 0.0354, 0.0286, 0.0150,},
 };
 
+    public static final double[][] strongBlurFilter2 = { //sigma of 1.5, support 05
+            {0.0150, 0.0286, 0.0354, 0.0286, 0.0150},
+            {0.0286, 0.0543, 0.0673, 0.0543, 0.0286},
+            {0.0354, 0.0673, 0.0834, 0.0673, 0.0354},
+            {0.0286, 0.0543, 0.0673, 0.0543, 0.0286},
+            {0.0150, 0.0286, 0.0354, 0.0286, 0.0150},
+    };
     public static final double[][] blur5x5Filter = {
             {1/256., 4/256., 6/256., 4/256., 1/256.},
             {4/256., 16/256., 24/256., 16/256., 4/256.},
@@ -57,21 +64,23 @@ public class FilterTools {
         WritableRaster referenceRaster = inputImage.image.getRaster();
         int width = referenceRaster.getWidth();
         int height = referenceRaster.getHeight();
+        int[] imageData = referenceRaster.getPixels(0, 0, width, height, new int[ width * height * referenceRaster.getNumBands()]);
+
         BufferedImage newBufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         WritableRaster blurredRaster = newBufferedImage.getRaster();
-        int[] tempPixel = new int[4];
         int[] outPixel = new int[4];
         /* for each pixel, run a matrix to get a new output pixel based on neighbors */
         for (int y=0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                applyFilterAtPixel(referenceRaster, x, y, filter, outPixel, tempPixel);
+                applyFilterAtPixel(referenceRaster, x, y, filter, outPixel, imageData, referenceRaster.getNumBands());
                 blurredRaster.setPixel(x, y, outPixel);
             }
         }
         inputImage.image = newBufferedImage;
         return inputImage;
     }
-    void applyFilterAtPixel(Raster referenceRaster, int x, int y, double[][] filter, int[] outPixel, int[] tempPixel) {
+
+    void applyFilterAtPixel(Raster referenceRaster, int x, int y, double[][] filter, int[] outPixel, int[] imageData, int bands) {
         int width = referenceRaster.getWidth();
         int height = referenceRaster.getHeight();
         // assume filter h/w is same, and odd
@@ -81,9 +90,16 @@ public class FilterTools {
         double r = 0;
         double g = 0;
         double b = 0;
+        int rowStride = bands * width;
         for(int i = 0; i < size; i++) {
+            int pixRow = y+i-mid;
+            if (pixRow<0) {
+                pixRow = -pixRow;
+            } else if (pixRow >= height) {
+                pixRow = height - ((pixRow - height) + 1);
+            }
+            int rowOffset = pixRow * rowStride;
             for(int j = 0; j < size; j++) {
-                int pixRow = y+i-mid;
                 int pixCol = x+j-mid;
                 // if out of bounds, use the mirror pixel as a source
                 if (pixCol<0) {
@@ -91,15 +107,11 @@ public class FilterTools {
                 } else if (pixCol >= width) {
                     pixCol = width - ((pixCol - width) + 1);
                 }
-                if (pixRow<0) {
-                    pixRow = -pixRow;
-                } else if (pixRow >= height) {
-                    pixRow = height - ((pixRow - height) + 1);
-                }
-                referenceRaster.getPixel(pixCol, pixRow, tempPixel);
-                r += (tempPixel[0]*filter[i][j]);
-                g += (tempPixel[1]*filter[i][j]);
-                b += (tempPixel[2]*filter[i][j]);
+                double weight = filter[i][j];
+                int offset = rowOffset + pixCol * bands;
+                r += imageData[offset  ] * weight;
+                g += imageData[offset+1] * weight;
+                b += imageData[offset+2] * weight;
             }
         }
         outPixel[0] = clampValue(r);
@@ -117,6 +129,72 @@ public class FilterTools {
         return (int)input;
     }
 
+    ProcessedImage scanAndThreshold(ProcessedImage inputImage) {
+        WritableRaster referenceRaster = inputImage.image.getRaster();
+        int width = referenceRaster.getWidth();
+        int height = referenceRaster.getHeight();
+        int[] imageData = referenceRaster.getPixels(0, 0, width, height, new int[width * height * referenceRaster.getNumBands()]);
+
+        int[] pixelSumCount = new int[256];
+        for(int i=0;i<imageData.length;i+=4) {
+            int r, g, b;
+            r = imageData[i+0];
+            g = imageData[i+1];
+            b = imageData[i+2];
+            // we ignore the grey pixel, as our bg item
+            if (r!=64 || g != 64 || b != 64) {
+                int pixelSum = (r + g + b) / 3;
+                pixelSumCount[pixelSum]++;
+            }
+        }
+        int maxPixelSum = 0;
+        int minPixelSum = Integer.MAX_VALUE;
+        int firstNonZero = 0;
+        int lastNonZero = pixelSumCount.length-1;
+        for (int i= 0; i< pixelSumCount.length;i++) {
+            int sum = pixelSumCount[i];
+            if (sum > maxPixelSum) {
+                maxPixelSum = sum;
+            }
+            if (sum < minPixelSum) {
+                minPixelSum = sum;
+            }
+            if(sum != 0) {
+                if (firstNonZero==0) {
+                    firstNonZero = i;
+                }
+                lastNonZero = i;
+            }
+        }
+
+        System.out.println("First non-zero: " + firstNonZero + " last non-zero " + lastNonZero
+                                   + " min pix count " + minPixelSum + " max pix count " + maxPixelSum);
+
+        int [] white = new int[4];
+        int [] black = new int[4];
+        int [] grey = new int[4];
+        white[0] = 255;
+        white[1] = 255;
+        white[2] = 255;
+        white[3] = 255;
+        black[3] = 255;
+        grey[0] = 64;
+        grey[1] = 64;
+        grey[2] = 64;
+        grey[3] = 255;
+        for (int y = 0; y<height;y++) {
+            for (int x = 0; x<width; x++) {
+                if (y > 255) {
+                    referenceRaster.setPixel(x, y, grey);
+                } else if(x >= pixelSumCount[y] * width / maxPixelSum ) {
+                    referenceRaster.setPixel(x, y, black);
+                } else {
+                    referenceRaster.setPixel(x, y, white);
+                }
+            }
+        }
+        return inputImage;
+    }
 
     ProcessedImage thresholdImage(ProcessedImage inputImage, int threshold) {
         int rgbThreshold = 3 * threshold;
@@ -223,9 +301,9 @@ public class FilterTools {
 
             Image originalImage = inputImage.getScaledInstance(newWidth, (int)(height * scale), Image.SCALE_SMOOTH);
 
-            int type = ((inputImage.getType() == 0) ? BufferedImage.TYPE_INT_ARGB : inputImage.getType());
+            // always set type as argb, so data byte array stuff is consistent.
             // create a buffer of the desired processing size
-            BufferedImage resizedImage = new BufferedImage(targetMaxWidth, targetMaxHeight, type);
+            BufferedImage resizedImage = new BufferedImage(targetMaxWidth, targetMaxHeight, BufferedImage.TYPE_INT_ARGB);
 
             // create a graphics context to write resized image into
             Graphics2D g2d = resizedImage.createGraphics();
