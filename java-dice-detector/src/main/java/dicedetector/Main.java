@@ -70,7 +70,7 @@ public class Main {
 
         JMenu manipulationMenu = new JMenu("modify image");
 
-        
+
         JMenuItem bwUpdate = new JMenuItem("convert to b/w");
         bwUpdate.addActionListener(this::thresholdImage);
         manipulationMenu.add(bwUpdate);
@@ -275,7 +275,7 @@ public class Main {
             processedImage.originalImage = bufferedImage;
             this.processedImage = processedImage;
             filterTools.resizeImageIfBig(processedImage, 640, 480);
-            imageData.add("New image size (" + bufferedImage.getWidth() + ", " + bufferedImage.getHeight() + ")");
+            imageData.add("New image size (" + processedImage.image.getWidth() + ", " + processedImage.image.getHeight() + ")");
             imageHolder.setImage(processedImage.image);
             image.setIcon(imageHolder);
             imageFrame.pack();
@@ -297,10 +297,10 @@ public class Main {
 /* Notes
  * 1/2/23 -> For getting consistent "straight" lines for the die, I run sharp,strongblur, convert b/w, edge.
  *           This process detected fairly good edges in all 12 example images (both unideal and ideal)
- *      
+ *
  *           Something to note going forward into the "die detection" phase of our work is that for all the example die,
- *           there were AT LEAST 2 sides that were mostly unobstructed linear edges that we might want to use for our algo. 
+ *           there were AT LEAST 2 sides that were mostly unobstructed linear edges that we might want to use for our algo.
  *           Edges however are curved at the corners and so having "straight lines" will be difficult to detect.
- * 
+ *
  *           Next Steps for me are to detect a dice "object" as a contiguous square block of white pixels, and detect the pips as contiguous circular blocks of white pixels.
  */
