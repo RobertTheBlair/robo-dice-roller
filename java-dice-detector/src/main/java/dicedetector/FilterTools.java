@@ -122,6 +122,73 @@ public class FilterTools {
         return (int)input;
     }
 
+    ProcessedImage scanAndThreshold(ProcessedImage inputImage) {
+        WritableRaster referenceRaster = inputImage.image.getRaster();
+        int width = referenceRaster.getWidth();
+        int height = referenceRaster.getHeight();
+        int[] imageData = referenceRaster.getPixels(0, 0, width, height, new int[width * height * referenceRaster.getNumBands()]);
+
+        int[] pixelSumCount = new int[256];
+        for(int i=0;i<imageData.length;i+=4) {
+            int r, g, b;
+            r = imageData[i+0];
+            g = imageData[i+1];
+            b = imageData[i+2];
+            // we ignore the grey pixel, as our bg item
+            if (r!=64 || g != 64 || b != 64) {
+                int pixelSum = (r + g + b) / 3;
+                pixelSumCount[pixelSum]++;
+            }
+        }
+        int maxPixelSum = 0;
+        int minPixelSum = Integer.MAX_VALUE;
+        int firstNonZero = 0;
+        int lastNonZero = pixelSumCount.length-1;
+        for (int i= 0; i< pixelSumCount.length;i++) {
+            int sum = pixelSumCount[i];
+            if (sum > maxPixelSum) {
+                maxPixelSum = sum;
+            }
+            if (sum < minPixelSum) {
+                minPixelSum = sum;
+            }
+            if(sum != 0) {
+                if (firstNonZero==0) {
+                    firstNonZero = i;
+                }
+                lastNonZero = i;
+            }
+        }
+
+        System.out.println("First non-zero: " + firstNonZero + " last non-zero " + lastNonZero
+                                   + " min pix count " + minPixelSum + " max pix count " + maxPixelSum);
+
+        int [] white = new int[4];
+        int [] black = new int[4];
+        int [] grey = new int[4];
+        white[0] = 255;
+        white[1] = 255;
+        white[2] = 255;
+        white[3] = 255;
+        black[3] = 255;
+        grey[0] = 64;
+        grey[1] = 64;
+        grey[2] = 64;
+        grey[3] = 255;
+        for (int y = 0; y<height;y++) {
+            for (int x = 0; x<width; x++) {
+                if (y > 255) {
+                    referenceRaster.setPixel(x, y, grey);
+                } else if(x >= pixelSumCount[y] * width / maxPixelSum ) {
+                    referenceRaster.setPixel(x, y, black);
+                } else {
+                    referenceRaster.setPixel(x, y, white);
+                }
+            }
+        }
+        return inputImage;
+    }
+
     ProcessedImage thresholdImage(ProcessedImage inputImage, int threshold) {
         int rgbThreshold = 3 * threshold;
         WritableRaster writableRaster = inputImage.image.getRaster();

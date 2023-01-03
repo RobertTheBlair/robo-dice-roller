@@ -126,6 +126,11 @@ public class Main {
                  -> runFilterAction(sourceImage -> filterTools.scanRowColImage(sourceImage), "Detect thing"));
         manipulationMenu.add(menuItem);
 
+        menuItem = new JMenuItem("analyze");
+        menuItem.addActionListener( actionEvent
+                 -> runFilterAction(sourceImage -> filterTools.scanAndThreshold(sourceImage), "analyze"));
+        manipulationMenu.add(menuItem);
+
         JMenu imageSubMenu = new JMenu("Load Image");
 
         for (int i=1;i<=6; i++) {
