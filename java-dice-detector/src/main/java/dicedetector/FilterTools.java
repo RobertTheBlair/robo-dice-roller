@@ -131,7 +131,7 @@ public class FilterTools {
     }
 
 
-    public ProcessedImage runMedianBlur(ProcessedImage inputImage) {
+    public ProcessedImage runMedianBlur(ProcessedImage inputImage, int oddSize) {
 
         WritableRaster referenceRaster = inputImage.image.getRaster();
         int width = referenceRaster.getWidth();
@@ -144,7 +144,7 @@ public class FilterTools {
         /* for each pixel, run a matrix to get a new output pixel based on neighbors */
         for (int y=0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                medianBlur(referenceRaster, x, y, 5, outPixel, imageData, referenceRaster.getNumBands());
+                medianBlur(referenceRaster, x, y, oddSize, outPixel, imageData, referenceRaster.getNumBands());
                 blurredRaster.setPixel(x, y, outPixel);
             }
         }

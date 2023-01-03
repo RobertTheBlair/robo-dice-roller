@@ -89,9 +89,14 @@ public class Main {
         strongBlur.addActionListener(this::strongBlur);
         subBlurMenu.add(strongBlur);
 
-        JMenuItem medianBlur = new JMenuItem("median blur");
+        JMenuItem medianBlur = new JMenuItem("median blur 5");
         medianBlur.addActionListener(actionEvent
-            -> runFilterAction(sourceImage -> filterTools.runMedianBlur(sourceImage), "sharp"));
+            -> runFilterAction(sourceImage -> filterTools.runMedianBlur(sourceImage, 5), "median blur 5"));
+        subBlurMenu.add(medianBlur);
+
+        medianBlur = new JMenuItem("median blur 3");
+        medianBlur.addActionListener(actionEvent
+            -> runFilterAction(sourceImage -> filterTools.runMedianBlur(sourceImage, 3), "median blur 3"));
         subBlurMenu.add(medianBlur);
 
         manipulationMenu.add(subBlurMenu);
