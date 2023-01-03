@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
+import java.util.Arrays;
 
 public class FilterTools {
 
@@ -128,6 +129,69 @@ public class FilterTools {
         }
         return (int)input;
     }
+
+
+    public ProcessedImage runMedianBlur(ProcessedImage inputImage) {
+
+        WritableRaster referenceRaster = inputImage.image.getRaster();
+        int width = referenceRaster.getWidth();
+        int height = referenceRaster.getHeight();
+        int[] imageData = referenceRaster.getPixels(0, 0, width, height, new int[ width * height * referenceRaster.getNumBands()]);
+
+        BufferedImage newBufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        WritableRaster blurredRaster = newBufferedImage.getRaster();
+        int[] outPixel = new int[4];
+        /* for each pixel, run a matrix to get a new output pixel based on neighbors */
+        for (int y=0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                medianBlur(referenceRaster, x, y, 5, outPixel, imageData, referenceRaster.getNumBands());
+                blurredRaster.setPixel(x, y, outPixel);
+            }
+        }
+        inputImage.image = newBufferedImage;
+        return inputImage;
+    }
+
+    void medianBlur(Raster referenceRaster, int x, int y, int size, int[] outPixel, int[] imageData, int bands) {
+        int width = referenceRaster.getWidth();
+        int height = referenceRaster.getHeight();
+        // assume filter h/w is same, and odd
+        int mid = size/2; // round down - so 3 goes to 1
+
+        int startY = Math.max(y - mid, 0);
+        int endY = Math.min(y + mid, height-1);
+        int startX = Math.max(x - mid, 0);
+        int endX = Math.min(x + mid, width-1);
+
+        int matrixSize = (1 + endY - startY) * (1 + endX - startX);
+
+        int[] rpixels = new int[matrixSize];
+        int[] gpixels = new int[matrixSize];
+        int[] bpixels = new int[matrixSize];
+
+        int rowStride = bands * width;
+        int index = 0;
+        for(int i = startY; i <= endY; i++) {
+            int rowOffset = i * rowStride;
+            for(int j = startX; j <= endX; j++) {
+                int offset = rowOffset + j * bands;
+                rpixels[index] = imageData[offset  ];
+                gpixels[index] = imageData[offset+1];
+                bpixels[index] = imageData[offset+2];
+                index++;
+            }
+        }
+
+        Arrays.sort(rpixels);
+        Arrays.sort(gpixels);
+        Arrays.sort(bpixels);
+
+        outPixel[0] = rpixels[matrixSize/2];
+        outPixel[1] = gpixels[matrixSize/2];
+        outPixel[2] = bpixels[matrixSize/2];
+        outPixel[3] = 255;
+    }
+
 
     ProcessedImage scanAndThreshold(ProcessedImage inputImage) {
         WritableRaster referenceRaster = inputImage.image.getRaster();
