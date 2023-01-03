@@ -145,6 +145,70 @@ public class FilterTools {
         return inputImage;
     }
 
+    ProcessedImage scanRowColImage(ProcessedImage inputImage) {
+        WritableRaster writableRaster = inputImage.image.getRaster();
+        int width = writableRaster.getWidth();
+        int height = writableRaster.getHeight();
+        int[] rowBrightnessSum = new int[height];
+        int[] colBrightnessSum = new int[width];
+
+        int[] pixel = new int[4];
+        int[] outPixel = new int[4];
+        for (int y=0;y<height; y++) {
+            for (int x = 0; x< width; x++) {
+                writableRaster.getPixel(x, y, pixel);
+                int pixelSum = (pixel[0] + pixel[1] + pixel[2])/3;
+                rowBrightnessSum[y] += pixelSum;
+                colBrightnessSum[x] += pixelSum;
+            }
+        }
+
+        int maxColBright = 0;
+        int minColBright = Integer.MAX_VALUE;
+        for (int x = 0; x<width; x++) {
+            int brightness = colBrightnessSum[x];
+            if (brightness > maxColBright)
+                maxColBright = brightness;
+            if (brightness < minColBright)
+                minColBright = brightness;
+        }
+
+        int maxRowBright = 0;
+        int minRowBright = Integer.MAX_VALUE;
+        for (int y = 0; y<height; y++) {
+            int brightness = rowBrightnessSum[y];
+            if (brightness > maxRowBright)
+                maxRowBright = brightness;
+            if (brightness < minRowBright)
+                minRowBright = brightness;
+        }
+        for (int x = 0; x<width; x++) {
+            colBrightnessSum[x] = scaleValue(colBrightnessSum[x], minColBright, maxColBright, 255);
+        }
+        for (int y = 0; y<height; y++) {
+            rowBrightnessSum[y] = scaleValue(rowBrightnessSum[y], minRowBright, maxRowBright, 255);
+        }
+
+        for (int y=0;y<height; y++) {
+            for (int x = 0; x< width; x++) {
+                outPixel[0] = 0;
+                outPixel[1] = rowBrightnessSum[y];
+                outPixel[2] = colBrightnessSum[x];
+                outPixel[3] = 255;
+                writableRaster.setPixel(x, y, outPixel);
+            }
+        }
+
+        return inputImage;
+    }
+
+    int scaleValue(int value, int minValue, int maxValue, int range) {
+        if (minValue == maxValue) {
+            return range;
+        }
+        return (int)( (value-minValue) * (long)range) / (maxValue - minValue);
+    }
+
     ProcessedImage resizeImageIfBig(ProcessedImage image, int targetMaxWidth, int targetMaxHeight) {
         BufferedImage inputImage = image.image;
         int width = inputImage.getWidth();
@@ -165,7 +229,7 @@ public class FilterTools {
 
             // create a graphics context to write resized image into
             Graphics2D g2d = resizedImage.createGraphics();
-            g2d.setColor(Color.GRAY);
+            g2d.setColor(Color.DARK_GRAY);
             g2d.fillRect(0, 0, targetMaxWidth, targetMaxHeight);
 
             // center the resized image inside the target area, and draw it

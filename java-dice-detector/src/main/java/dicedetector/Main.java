@@ -121,6 +121,11 @@ public class Main {
 
         manipulationMenu.add(sharpBlurMenu);
 
+        JMenuItem menuItem = new JMenuItem("detectThing");
+        menuItem.addActionListener( actionEvent
+                 -> runFilterAction(sourceImage -> filterTools.scanRowColImage(sourceImage), "Detect thing"));
+        manipulationMenu.add(menuItem);
+
         JMenu imageSubMenu = new JMenu("Load Image");
 
         for (int i=1;i<=6; i++) {
