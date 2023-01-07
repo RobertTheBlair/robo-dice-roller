@@ -385,7 +385,7 @@ public class FilterTools {
     }
 
     ProcessedImage findDieInImage(ProcessedImage img) {
-        final int sizeThreshold = 100;
+        final int sizeThreshold = 80, pipSizeThrehold = 25;
         WritableRaster writableRaster = img.alteredImage.getRaster();
         int height = writableRaster.getHeight();
         int width = writableRaster.getWidth();
@@ -398,19 +398,28 @@ public class FilterTools {
             for(int x = 0; x < width; x++) {
                 pixelRef = y * bands * width + x * bands;
                 sumVal = imageData[pixelRef] + imageData[pixelRef+1] + imageData[pixelRef+2];
-                if(sumVal > 0) {
+                if(sumVal > 0 && !img.dieObjectscontainsPixel(x, y)) {
                     //we found the begginning of the die edge,
-                    img.die = DieObject.createDieObject(imageData, height, width, x, y, bands);
-                    if(img.die.getEdgeSize() > sizeThreshold) { 
-                        img.turnEdgeRed();
-                        return img;
+                    DieObject object = DieObject.createDieObject(imageData, height, width, x, y, bands);
+                    int objSize = object.getEdgeSize();
+                    
+                    if(objSize > sizeThreshold) {
+                        System.out.printf("Die Edge of size %d detected\n", objSize);
+                        img.dieObjects.add(object);
+                        
+                        img.colorDieobject(img.dieObjects.size()-1, ProcessedImage.colorBlue);
+                    }
+                    else if (objSize > pipSizeThrehold) {
+                        System.out.printf("pip object of size %d detected\n", objSize);
+                        img.dieObjects.add(object);
+                        img.colorDieobject(img.dieObjects.size()-1,  ProcessedImage.colorGreen);
                     }
                     else {
-                        System.out.println("too small object found");
-                        System.out.printf("Size: %d\n", img.die.getEdgeSize());
+                        System.out.printf("trash object of size %d detected\n", objSize);
+                        img.dieObjects.add(object);
+                        img.colorDieobject(img.dieObjects.size()-1,  ProcessedImage.colorRed);
                     }
                 }
-                
             }
         }
 

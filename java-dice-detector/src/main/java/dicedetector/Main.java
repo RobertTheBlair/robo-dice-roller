@@ -302,6 +302,7 @@ public class Main {
             processedImage.fileName = filePath;
             processedImage.alteredImage = bufferedImage;
             processedImage.originalImage = bufferedImage;
+            processedImage.dieObjects = new ArrayList<DieObject>();
             this.processedImage = processedImage;
             filterTools.resizeImageIfBig(processedImage, 640, 480);
             imageData.add("New image size (" + processedImage.alteredImage.getWidth() + ", " + processedImage.alteredImage.getHeight() + ")");

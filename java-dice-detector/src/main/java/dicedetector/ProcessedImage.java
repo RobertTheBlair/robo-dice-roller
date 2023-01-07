@@ -15,10 +15,17 @@ public class ProcessedImage {
     BufferedImage originalImage;
     BufferedImage alteredImage;
 
-    DieObject die;
+    ArrayList<DieObject> dieObjects;
 
-    public void turnEdgeRed() {
-        if(die == null) {
+    static final int[] colorRed =   { 255,   0,   0, 255};
+
+    static final int[] colorGreen = {   0, 255,   0, 255};
+
+    static final int[] colorBlue =  {   0,   0, 255, 255};
+
+    public void colorDieobject(int index, int[] colorPixel) {
+        DieObject die = dieObjects.get(index);
+        if(die== null) {
             System.out.println("Cannot alter null die");
             return;
         }
@@ -26,15 +33,29 @@ public class ProcessedImage {
             System.out.println("no altered image");
             return;
         }
-        System.out.println("turning pixels red");
         WritableRaster writableImage = alteredImage.getRaster();
-        int[] redPixels = { 255, 0, 0, 255};
         die.edge_pixels.forEach((k,v) ->  {
             for(int i : v) {
                 // System.out.printf("(%d,%d)\n", i,k);
-                writableImage.setPixel(i, k, redPixels);
+                writableImage.setPixel(i, k, colorPixel);
             }
         });
+    }
+
+    public boolean dieObjectscontainsPixel(int x, int y) {
+        if(dieObjects == null) {
+            return false;
+        }
+        ArrayList<Integer> pixels;
+        for(DieObject die : dieObjects) {
+            pixels = die.edge_pixels.get(y);
+            if(pixels != null) {
+                for(int xVal : pixels) {
+                    if(xVal == x) return true;
+                }
+            }
+        }
+        return false;
     }
 }
 
