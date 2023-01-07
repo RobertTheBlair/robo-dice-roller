@@ -148,6 +148,8 @@ public class Main {
         JMenuItem findDie = new JMenuItem("find Die");
 
         findDie.addActionListener(this::findDieImage);
+        imageOjectMenu.add(findDie);
+        
 
         for (int i=1;i<=6; i++) {
             JMenuItem imageItem = imageSubMenu.add(new JMenuItem("Load Small Ideal " + i));
@@ -163,6 +165,7 @@ public class Main {
         JMenuBar m1 = new JMenuBar();
         m1.add(imageSubMenu);
         m1.add(manipulationMenu);
+        m1.add(imageOjectMenu);
         return m1;
     }
 
@@ -172,7 +175,7 @@ public class Main {
              action.apply(processedImage);
             long endTime = System.currentTimeMillis();
             imageData.add(filterName + " action: duration MS = " + (endTime - startTime));
-            imageHolder.setImage(processedImage.image);
+            imageHolder.setImage(processedImage.alteredImage);
         }
         refreshInfoPanel();
         imageFrame.repaint();
@@ -180,6 +183,7 @@ public class Main {
     /* unfinished */
     void findDieImage(final ActionEvent actionEvent) {
         //todo, find die object and store it in the image variable.
+        runFilterAction( sourceImage -> filterTools.findDieInImage(sourceImage), "find die");
     }
 
     private void thresholdImage(final ActionEvent actionEvent) {
@@ -296,12 +300,12 @@ public class Main {
         if (bufferedImage != null) {
             ProcessedImage processedImage = new ProcessedImage();
             processedImage.fileName = filePath;
-            processedImage.image = bufferedImage;
+            processedImage.alteredImage = bufferedImage;
             processedImage.originalImage = bufferedImage;
             this.processedImage = processedImage;
             filterTools.resizeImageIfBig(processedImage, 640, 480);
-            imageData.add("New image size (" + processedImage.image.getWidth() + ", " + processedImage.image.getHeight() + ")");
-            imageHolder.setImage(processedImage.image);
+            imageData.add("New image size (" + processedImage.alteredImage.getWidth() + ", " + processedImage.alteredImage.getHeight() + ")");
+            imageHolder.setImage(processedImage.alteredImage);
             image.setIcon(imageHolder);
             imageFrame.pack();
             imageFrame.repaint(30);

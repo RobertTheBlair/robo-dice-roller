@@ -1,6 +1,7 @@
 package dicedetector;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -12,36 +13,29 @@ public class ProcessedImage {
     Map<String, Object> metaData = new TreeMap<>();
     List<String> processHistory = new ArrayList<>();
     BufferedImage originalImage;
-    BufferedImage image;
-
-    private class DieObject {
-        /*  A 2D array of pixels where edge_pixels[i][0] is the x and edge_pixels[i][1] is the y value of a pixel on the edge of the object;
-         *  (theorhetically) the first index in edge_pixels should be the top left corner 
-         *  example: { {1,2}, {2,2} {3,2}, {3,3}, {4,3}, {4,2}, {4,1}, {3,1}, {2,1} {1,1} }
-         */
-        private int[][] edge_pixels; 
-        /*  A 3D array of pip_objects within the die's edges. A pip is defined as a circular object representing the value of a die
-         * example: 
-         * { 
-         *      { {1,2}, {2,2} {3,2}, {3,3}, {4,3}, {4,2}, {4,1}, {3,1}, {2,1} {1,1} },
-         *      { {5,2}, {6,2} {7,2}, {7,3}, {8,3}, {8,2}, {8,1}, {7,1}, {6,1} {5,1} },
-         *      ...
-         * }
-         */
-        private int[][][] pips; 
-
-        public DieObject(int[][] edge) {
-            this.edge_pixels = edge;
-            this.pips = null;
-        }
-
-        public DieObject(int[][] edge, int[][][] pips) {
-            this.edge_pixels = edge;
-            this.pips = pips;
-        }
-    }
+    BufferedImage alteredImage;
 
     DieObject die;
+
+    public void turnEdgeRed() {
+        if(die == null) {
+            System.out.println("Cannot alter null die");
+            return;
+        }
+        if(alteredImage == null) {
+            System.out.println("no altered image");
+            return;
+        }
+        System.out.println("turning pixels red");
+        WritableRaster writableImage = alteredImage.getRaster();
+        int[] redPixels = { 255, 0, 0, 255};
+        die.edge_pixels.forEach((k,v) ->  {
+            for(int i : v) {
+                // System.out.printf("(%d,%d)\n", i,k);
+                writableImage.setPixel(i, k, redPixels);
+            }
+        });
+    }
 }
 
 

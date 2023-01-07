@@ -62,7 +62,7 @@ public class FilterTools {
 
     public ProcessedImage runMatrixFilter(ProcessedImage inputImage, double[][] filter) {
 
-        WritableRaster referenceRaster = inputImage.image.getRaster();
+        WritableRaster referenceRaster = inputImage.alteredImage.getRaster();
         int width = referenceRaster.getWidth();
         int height = referenceRaster.getHeight();
         int[] imageData = referenceRaster.getPixels(0, 0, width, height, new int[ width * height * referenceRaster.getNumBands()]);
@@ -77,7 +77,7 @@ public class FilterTools {
                 blurredRaster.setPixel(x, y, outPixel);
             }
         }
-        inputImage.image = newBufferedImage;
+        inputImage.alteredImage = newBufferedImage;
         return inputImage;
     }
 
@@ -133,7 +133,7 @@ public class FilterTools {
 
     public ProcessedImage runMedianBlur(ProcessedImage inputImage, int oddSize) {
 
-        WritableRaster referenceRaster = inputImage.image.getRaster();
+        WritableRaster referenceRaster = inputImage.alteredImage.getRaster();
         int width = referenceRaster.getWidth();
         int height = referenceRaster.getHeight();
         int[] imageData = referenceRaster.getPixels(0, 0, width, height, new int[ width * height * referenceRaster.getNumBands()]);
@@ -148,7 +148,7 @@ public class FilterTools {
                 blurredRaster.setPixel(x, y, outPixel);
             }
         }
-        inputImage.image = newBufferedImage;
+        inputImage.alteredImage = newBufferedImage;
         return inputImage;
     }
 
@@ -194,7 +194,7 @@ public class FilterTools {
 
 
     ProcessedImage scanAndThreshold(ProcessedImage inputImage) {
-        WritableRaster referenceRaster = inputImage.image.getRaster();
+        WritableRaster referenceRaster = inputImage.alteredImage.getRaster();
         int width = referenceRaster.getWidth();
         int height = referenceRaster.getHeight();
         int[] imageData = referenceRaster.getPixels(0, 0, width, height, new int[width * height * referenceRaster.getNumBands()]);
@@ -262,7 +262,7 @@ public class FilterTools {
 
     ProcessedImage thresholdImage(ProcessedImage inputImage, int threshold) {
         int rgbThreshold = 3 * threshold;
-        WritableRaster writableRaster = inputImage.image.getRaster();
+        WritableRaster writableRaster = inputImage.alteredImage.getRaster();
         int[] pixel = new int[4];
         int[] outPixel = new int[4];
         int width = writableRaster.getWidth();
@@ -288,7 +288,7 @@ public class FilterTools {
     }
 
     ProcessedImage scanRowColImage(ProcessedImage inputImage) {
-        WritableRaster writableRaster = inputImage.image.getRaster();
+        WritableRaster writableRaster = inputImage.alteredImage.getRaster();
         int width = writableRaster.getWidth();
         int height = writableRaster.getHeight();
         int[] rowBrightnessSum = new int[height];
@@ -352,7 +352,7 @@ public class FilterTools {
     }
 
     ProcessedImage resizeImageIfBig(ProcessedImage image, int targetMaxWidth, int targetMaxHeight) {
-        BufferedImage inputImage = image.image;
+        BufferedImage inputImage = image.alteredImage;
         int width = inputImage.getWidth();
         int height = inputImage.getHeight();
 
@@ -379,8 +379,41 @@ public class FilterTools {
             int offsetY = (targetMaxHeight - newHeight)/2;
             g2d.drawImage(originalImage, offsetX, offsetY, null);
             g2d.dispose();
-            image.image = resizedImage;
+            image.alteredImage = resizedImage;
         }
         return image;
+    }
+
+    ProcessedImage findDieInImage(ProcessedImage img) {
+        final int sizeThreshold = 100;
+        WritableRaster writableRaster = img.alteredImage.getRaster();
+        int height = writableRaster.getHeight();
+        int width = writableRaster.getWidth();
+        int[] imageData = writableRaster.getPixels(0, 0, width, height, new int[ width * height * writableRaster.getNumBands()]);
+        int sumVal = 0;
+        int bands = writableRaster.getNumBands();
+        int pixelRef = 0;
+        
+        for(int y = 0; y < height; y++) {
+            for(int x = 0; x < width; x++) {
+                pixelRef = y * bands * width + x * bands;
+                sumVal = imageData[pixelRef] + imageData[pixelRef+1] + imageData[pixelRef+2];
+                if(sumVal > 0) {
+                    //we found the begginning of the die edge,
+                    img.die = DieObject.createDieObject(imageData, height, width, x, y, bands);
+                    if(img.die.getEdgeSize() > sizeThreshold) { 
+                        img.turnEdgeRed();
+                        return img;
+                    }
+                    else {
+                        System.out.println("too small object found");
+                        System.out.printf("Size: %d\n", img.die.getEdgeSize());
+                    }
+                }
+                
+            }
+        }
+
+        return img;
     }
 }
