@@ -24,8 +24,11 @@ public class ProcessedImage {
     static final int[] colorBlue =  {   0,   0, 255, 255};
 
     public void colorDieobject(int index, int[] colorPixel) {
-        DieObject die = dieObjects.get(index);
-        if(die== null) {
+        colorDieObject(dieObjects.get(index), colorPixel);
+    }
+
+    public void colorDieObject(DieObject die, int[] colorPixel) {
+        if(die == null) {
             System.out.println("Cannot alter null die");
             return;
         }
@@ -36,7 +39,6 @@ public class ProcessedImage {
         WritableRaster writableImage = alteredImage.getRaster();
         die.edge_pixels.forEach((k,v) ->  {
             for(int i : v) {
-                // System.out.printf("(%d,%d)\n", i,k);
                 writableImage.setPixel(i, k, colorPixel);
             }
         });

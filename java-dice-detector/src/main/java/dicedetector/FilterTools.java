@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class FilterTools {
@@ -385,7 +386,7 @@ public class FilterTools {
     }
 
     ProcessedImage findDieInImage(ProcessedImage img) {
-        final int sizeThreshold = 80, pipSizeThrehold = 25;
+//        final int sizeThreshold = 80, pipSizeThrehold = 25;
         WritableRaster writableRaster = img.alteredImage.getRaster();
         int height = writableRaster.getHeight();
         int width = writableRaster.getWidth();
@@ -393,36 +394,48 @@ public class FilterTools {
         int sumVal = 0;
         int bands = writableRaster.getNumBands();
         int pixelRef = 0;
-        
+        int largestBlobSize = 0;
+        img.dieObjects = new ArrayList<>();
+
         for(int y = 0; y < height; y++) {
             for(int x = 0; x < width; x++) {
                 pixelRef = y * bands * width + x * bands;
                 sumVal = imageData[pixelRef] + imageData[pixelRef+1] + imageData[pixelRef+2];
                 if(sumVal > 0 && !img.dieObjectscontainsPixel(x, y)) {
-                    //we found the begginning of the die edge,
+                    //we found the beginning of the die edge,
                     DieObject object = DieObject.createDieObject(imageData, height, width, x, y, bands);
-                    int objSize = object.getEdgeSize();
-                    
-                    if(objSize > sizeThreshold) {
-                        System.out.printf("Die Edge of size %d detected\n", objSize);
-                        img.dieObjects.add(object);
-                        
-                        img.colorDieobject(img.dieObjects.size()-1, ProcessedImage.colorBlue);
-                    }
-                    else if (objSize > pipSizeThrehold) {
-                        System.out.printf("pip object of size %d detected\n", objSize);
-                        img.dieObjects.add(object);
-                        img.colorDieobject(img.dieObjects.size()-1,  ProcessedImage.colorGreen);
-                    }
-                    else {
-                        System.out.printf("trash object of size %d detected\n", objSize);
-                        img.dieObjects.add(object);
-                        img.colorDieobject(img.dieObjects.size()-1,  ProcessedImage.colorRed);
+                    img.dieObjects.add(object);
+                    if (object.getEdgeSize() > largestBlobSize) {
+                        largestBlobSize = object.getEdgeSize();
                     }
                 }
             }
         }
+        int pipCount = 0;
+        int otherPipCount = 0;
+        int pipSizeThrehold = Math.max(largestBlobSize / 7, 10);
+        for ( DieObject dieObject : img.dieObjects) {
+            int objSize = dieObject.getEdgeSize();
+//            System.out.printf("edge with dimensions h=%d w=%d \n", objSize, dieObject.getEdgeWidth());
+            if ( Math.abs(objSize - dieObject.getEdgeWidth()) <= 5 && objSize > pipSizeThrehold) {
+                System.out.printf("squarish / circle shape found h=%d w=%d \n", objSize, dieObject.getEdgeWidth());
+                otherPipCount++;
+            }
 
+            if (objSize >= largestBlobSize - 5) {
+                System.out.printf("Die Edge of size %d detected\n", objSize);
+                img.colorDieObject(dieObject, ProcessedImage.colorBlue);
+            } else if (objSize > pipSizeThrehold) {
+                System.out.printf("pip object of size %d detected\n", objSize);
+                pipCount++;
+                img.colorDieObject(dieObject, ProcessedImage.colorGreen);
+            } else {
+//                System.out.printf("trash object of size %d detected\n", objSize);
+                img.colorDieObject(dieObject, ProcessedImage.colorRed);
+            }
+        }
+        System.out.printf("Apparent pip count=%d\n", pipCount);
+        System.out.printf("Other pip count=%d\n", otherPipCount - 1);
         return img;
     }
 }
