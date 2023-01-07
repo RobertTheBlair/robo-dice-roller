@@ -149,7 +149,7 @@ public class Main {
 
         findDie.addActionListener(this::findDieImage);
         imageOjectMenu.add(findDie);
-        
+
 
         for (int i=1;i<=6; i++) {
             JMenuItem imageItem = imageSubMenu.add(new JMenuItem("Load Small Ideal " + i));
@@ -160,6 +160,21 @@ public class Main {
             JMenuItem imageItem = imageSubMenu.add(new JMenuItem("Load Original Unideal " + i));
             imageItem.setActionCommand(String.valueOf(i));
             imageItem.addActionListener((ActionEvent e) -> displayImage(e,true, false));
+        }
+
+        String[] otherFiles = {
+                "images/random_junk/multiple_close_white_dice.jpg",
+                "images/random_junk/multiple_close_white_dice2.jpg",
+                "images/random_junk/multiple_red_dice.jpg",
+                "images/random_junk/multiple_white_dice.jpg",
+                "images/random_junk/multiple_white_dice2.jpg",
+                "images/random_junk/multiple_white_dice3.jpg",
+                "images/random_junk/multiple_white_dice4.jpg",
+        };
+        for (int i=0;i<otherFiles.length;i++) {
+            String path = otherFiles[i];
+            JMenuItem imageItem = imageSubMenu.add(new JMenuItem("Load File " + path.substring(path.lastIndexOf("/") + 1)));
+            imageItem.addActionListener((ActionEvent e) -> displayImageByPath(path));
         }
 
         JMenuBar m1 = new JMenuBar();
@@ -292,10 +307,7 @@ public class Main {
         return newImage;
     }
 
-    void displayImage(ActionEvent actionEvent, boolean original, boolean ideal) {
-        final int number = Integer.parseInt(actionEvent.getActionCommand());
-        final String filePath = imageFileName(number, original, ideal);
-
+    void displayImageByPath(String filePath) {
         BufferedImage bufferedImage = loadImage(filePath);
         if (bufferedImage != null) {
             ProcessedImage processedImage = new ProcessedImage();
@@ -312,6 +324,12 @@ public class Main {
             imageFrame.repaint(30);
         }
         refreshInfoPanel();
+    }
+
+    void displayImage(ActionEvent actionEvent, boolean original, boolean ideal) {
+        final int number = Integer.parseInt(actionEvent.getActionCommand());
+        final String filePath = imageFileName(number, original, ideal);
+        displayImageByPath(filePath);
     }
 
     void refreshInfoPanel() {
