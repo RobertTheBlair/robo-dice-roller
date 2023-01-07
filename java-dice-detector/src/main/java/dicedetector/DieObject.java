@@ -27,6 +27,11 @@ public class DieObject {
     }
 
     public int getEdgeSize() {
+        int height = 1 + maxY - minY;
+        if (height != edge_pixels.size()) {
+            System.out.printf("unmatched height info: %d vs %d\n", height, edge_pixels.size());
+        }
+
         return edge_pixels.size(); //returns the "height" of the object
     }
 
@@ -51,20 +56,28 @@ public class DieObject {
         pixelsToVisit.add(startingPoint);
         vistedPixels.add(startingPoint);
         Point refPoint;
-        int minX, maxX, minY, maxY;
-        minX = Integer.MAX_VALUE;
-        minY = Integer.MAX_VALUE;
-        maxX = 0;
-        maxY = 0;
+        // we know the incoming point is a valid number for min/max
+        int minX = x, maxX = x, minY = y, maxY = y;
 
         while (!pixelsToVisit.isEmpty()) {
             refPoint = pixelsToVisit.poll();
+
             for (int i = -1; i < 2; i++) {
+                int curY = (int)refPoint.getY() + i;
+                if (curY < 0 || curY >= height) {
+                    continue;
+                }
                 for (int j = -1; j < 2; j++) {
+                    if ( i==0 && j == 0) {
+                        continue;
+                    }
                     int curX = (int)refPoint.getX() + j;
-                    int curY = (int)refPoint.getY() + i;
-                    Point nextPoint = new Point( curX, curY);
-                    if (pixelIsValid(width,height,nextPoint) && !vistedPixels.contains(nextPoint)) {
+                    if (curX < 0 || curX >= width) {
+                        continue;
+                    }
+
+                    Point nextPoint = new Point(curX, curY);
+                    if (!vistedPixels.contains(nextPoint)) {
                         vistedPixels.add(nextPoint);
                         int pixelRef = curY * bands * width + curX * bands;
                         int sumVal = imageData[pixelRef] + imageData[pixelRef + 1] + imageData[pixelRef + 2];

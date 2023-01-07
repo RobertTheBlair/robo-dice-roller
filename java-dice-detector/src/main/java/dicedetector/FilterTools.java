@@ -413,7 +413,11 @@ public class FilterTools {
         }
         int pipCount = 0;
         int otherPipCount = 0;
-        int pipSizeThrehold = Math.max(largestBlobSize / 7, 10);
+        int smallObjectCount = 0;
+        int mediumObjectCount = 0;
+        int largeObjectCount = 0;
+        int pipSizeThrehold = (int)Math.max(largestBlobSize * 0.10, 10.);
+        int largeObjectThreshold = (int)(largestBlobSize * 0.80);
         for ( DieObject dieObject : img.dieObjects) {
             int objSize = dieObject.getEdgeSize();
 //            System.out.printf("edge with dimensions h=%d w=%d \n", objSize, dieObject.getEdgeWidth());
@@ -422,20 +426,24 @@ public class FilterTools {
                 otherPipCount++;
             }
 
-            if (objSize >= largestBlobSize - 5) {
+            if (objSize >= largeObjectThreshold) {
                 System.out.printf("Die Edge of size %d detected\n", objSize);
                 img.colorDieObject(dieObject, ProcessedImage.colorBlue);
+                largeObjectCount++;
             } else if (objSize > pipSizeThrehold) {
                 System.out.printf("pip object of size %d detected\n", objSize);
                 pipCount++;
+                mediumObjectCount++;
                 img.colorDieObject(dieObject, ProcessedImage.colorGreen);
             } else {
 //                System.out.printf("trash object of size %d detected\n", objSize);
+                smallObjectCount++;
                 img.colorDieObject(dieObject, ProcessedImage.colorRed);
             }
         }
         System.out.printf("Apparent pip count=%d\n", pipCount);
         System.out.printf("Other pip count=%d\n", otherPipCount - 1);
+        System.out.printf("Small count=%d, medium count=%d, large count=%d\n", smallObjectCount, mediumObjectCount, largeObjectCount);
         return img;
     }
 }
