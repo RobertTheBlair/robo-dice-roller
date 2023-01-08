@@ -90,28 +90,14 @@ public class DieObject {
                                 edgePixels.put(curY, xVals);
                             }
                             xVals.add(curX);
-                            if (maxX < curX) {
-                                maxX = curX;
-                            }
-                            if (minX > curX) {
-                                minX = curX;
-                            }
-                            if (maxY < curY) {
-                                maxY = curY;
-                            }
-                            if (minY > curY) {
-                                minY = curY;
-                            }
+                            maxX = Math.max(maxX, curX);
+                            minX = Math.min(minX, curX);
+                            maxY = Math.max(maxY, curY);
+                            minY = Math.min(minY, curY);
                         }
                     }
                 }
             }
-        }
-        if(minX == Integer.MAX_VALUE) {
-            minX = maxX;
-        }
-        if(minY == Integer.MAX_VALUE) {
-            minY = maxY;
         }
         return new DieObject(edgePixels, minX, maxX, minY, maxY);
     }
