@@ -218,12 +218,8 @@ public class FilterTools {
         int lastNonZero = pixelSumCount.length-1;
         for (int i= 0; i< pixelSumCount.length;i++) {
             int sum = pixelSumCount[i];
-            if (sum > maxPixelSum) {
-                maxPixelSum = sum;
-            }
-            if (sum < minPixelSum) {
-                minPixelSum = sum;
-            }
+            maxPixelSum = Math.max(sum, maxPixelSum);
+            minPixelSum = Math.min(sum, minPixelSum);
             if(sum != 0) {
                 if (firstNonZero==0) {
                     firstNonZero = i;
@@ -309,21 +305,15 @@ public class FilterTools {
         int maxColBright = 0;
         int minColBright = Integer.MAX_VALUE;
         for (int x = 0; x<width; x++) {
-            int brightness = colBrightnessSum[x];
-            if (brightness > maxColBright)
-                maxColBright = brightness;
-            if (brightness < minColBright)
-                minColBright = brightness;
+            maxColBright = Math.max(colBrightnessSum[x], maxColBright);
+            minColBright = Math.max(colBrightnessSum[x], minColBright);
         }
 
         int maxRowBright = 0;
         int minRowBright = Integer.MAX_VALUE;
         for (int y = 0; y<height; y++) {
-            int brightness = rowBrightnessSum[y];
-            if (brightness > maxRowBright)
-                maxRowBright = brightness;
-            if (brightness < minRowBright)
-                minRowBright = brightness;
+            maxRowBright = Math.max(rowBrightnessSum[y], maxRowBright);
+            minRowBright = Math.max(rowBrightnessSum[y], minRowBright);
         }
         for (int x = 0; x<width; x++) {
             colBrightnessSum[x] = scaleValue(colBrightnessSum[x], minColBright, maxColBright, 255);
@@ -405,9 +395,7 @@ public class FilterTools {
                     //we found the beginning of the die edge,
                     DieObject object = DieObject.createDieObject(imageData, height, width, x, y, bands);
                     img.dieObjects.add(object);
-                    if (object.getEdgeSize() > largestBlobSize) {
-                        largestBlobSize = object.getEdgeSize();
-                    }
+                    largestBlobSize = Math.max(object.getEdgeSize(), largestBlobSize);
                 }
             }
         }
@@ -417,7 +405,7 @@ public class FilterTools {
         int mediumObjectCount = 0;
         int largeObjectCount = 0;
         int pipSizeThrehold = (int)Math.max(largestBlobSize * 0.10, 10.);
-        int largeObjectThreshold = (int)(largestBlobSize * 0.80);
+        int largeObjectThreshold = (int)(largestBlobSize * 0.707); // worse case diff between rotated dice is a factory of 1/sqrt(2)
         for ( DieObject dieObject : img.dieObjects) {
             int objSize = dieObject.getEdgeSize();
 //            System.out.printf("edge with dimensions h=%d w=%d \n", objSize, dieObject.getEdgeWidth());
