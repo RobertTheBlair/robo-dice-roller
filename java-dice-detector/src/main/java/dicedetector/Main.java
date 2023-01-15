@@ -13,56 +13,61 @@ import java.util.List;
 
 public class Main {
 
-    ProcessedImage processedImage;
     ImageIcon imageHolder;
     JLabel image;
     JFrame imageFrame;
     JTextPane logView;
     JPanel infoPane;
     JTextPane infoView;
+    boolean headlessMode;
 
+    ProcessedImage processedImage;
     List<String> logData = new ArrayList<>();
     List<String> imageData = new ArrayList<>();
     FilterTools filterTools = new FilterTools();
 
-    public Main() {
-        imageFrame = new JFrame("Image viewer");
 
-        infoPane = new JPanel();
-        infoView = new JTextPane();
-        logView = new JTextPane();
+    public Main(boolean headlessMode) {
+        this.headlessMode = headlessMode;
+        if (headlessMode == false) {
+            imageFrame = new JFrame("Image viewer");
 
-        infoView.setText("Information");
-        infoView.setPreferredSize(new Dimension(400, 200));
-        infoView.setBorder(new TitledBorder("Information"));
-        infoView.setEditable(false);
-        infoView.setAutoscrolls(true);
+            infoPane = new JPanel();
+            infoView = new JTextPane();
+            logView = new JTextPane();
 
-        logView.setText("Dice detector loaded");
-        logView.setBorder(new TitledBorder("App logs"));
-        logView.setEditable(false);
-        logView.setPreferredSize(new Dimension(400, 200));
-        logView.setAutoscrolls(true);
+            infoView.setText("Information");
+            infoView.setPreferredSize(new Dimension(400, 200));
+            infoView.setBorder(new TitledBorder("Information"));
+            infoView.setEditable(false);
+            infoView.setAutoscrolls(true);
 
-        infoPane.add(infoView);
-        infoPane.add(logView);
-        infoPane.setLayout(new GridLayout(0,1));
+            logView.setText("Dice detector loaded");
+            logView.setBorder(new TitledBorder("App logs"));
+            logView.setEditable(false);
+            logView.setPreferredSize(new Dimension(400, 200));
+            logView.setAutoscrolls(true);
 
-        image = new JLabel();
-        imageHolder = new ImageIcon();
-        imageFrame.add(infoPane);
-        imageFrame.add(image);
-        imageFrame.setJMenuBar(initMenu());
+            infoPane.add(infoView);
+            infoPane.add(logView);
+            infoPane.setLayout(new GridLayout(0, 1));
 
-        imageFrame.setSize(640, 480);
-        imageFrame.setLayout(new FlowLayout());
-        imageFrame.setVisible(true);
+            image = new JLabel();
+            imageHolder = new ImageIcon();
+            imageFrame.add(infoPane);
+            imageFrame.add(image);
+            imageFrame.setJMenuBar(initMenu());
+
+            imageFrame.setSize(640, 480);
+            imageFrame.setLayout(new FlowLayout());
+            imageFrame.setVisible(true);
+        }
     }
 
     public void logInfo(final String str) {
         logData.add(str);
         final String output = String.join("\n", logData);
-        logView.setText(output);
+        if (!headlessMode) logView.setText(output);
         System.out.println(str);
     }
 
@@ -71,67 +76,67 @@ public class Main {
         JMenu manipulationMenu = new JMenu("modify image");
 
 
-        JMenuItem bwUpdate = new JMenuItem("convert to b/w");
-        bwUpdate.addActionListener(this::thresholdImage);
-        manipulationMenu.add(bwUpdate);
+        JMenuItem menuItem = new JMenuItem("convert to b/w");
+        menuItem.addActionListener(this::thresholdImage);
+        manipulationMenu.add(menuItem);
 
         JMenu subBlurMenu = new JMenu("blur options");
 
-        JMenuItem blur = new JMenuItem("blur image");
-        blur.addActionListener(this::blurImage);
-        subBlurMenu.add(blur);
+        menuItem= new JMenuItem("blur image");
+        menuItem.addActionListener(this::blurImage);
+        subBlurMenu.add(menuItem);
 
-        JMenuItem blur5 = new JMenuItem("blur 5x5 image");
-        blur5.addActionListener(this::blurImage5);
-        subBlurMenu.add(blur5);
+        menuItem = new JMenuItem("blur 5x5 image");
+        menuItem.addActionListener(this::blurImage5);
+        subBlurMenu.add(menuItem);
 
-        JMenuItem strongBlur = new JMenuItem("strong blur");
-        strongBlur.addActionListener(this::strongBlur);
-        subBlurMenu.add(strongBlur);
+        menuItem = new JMenuItem("strong blur");
+        menuItem.addActionListener(this::strongBlur);
+        subBlurMenu.add(menuItem);
 
-        JMenuItem medianBlur = new JMenuItem("median blur 5");
-        medianBlur.addActionListener(actionEvent
+        menuItem = new JMenuItem("median blur 5");
+        menuItem.addActionListener(actionEvent
             -> runFilterAction(sourceImage -> filterTools.runMedianBlur(sourceImage, 5), "median blur 5"));
-        subBlurMenu.add(medianBlur);
+        subBlurMenu.add(menuItem);
 
-        medianBlur = new JMenuItem("median blur 3");
-        medianBlur.addActionListener(actionEvent
+        menuItem = new JMenuItem("median blur 3");
+        menuItem.addActionListener(actionEvent
             -> runFilterAction(sourceImage -> filterTools.runMedianBlur(sourceImage, 3), "median blur 3"));
-        subBlurMenu.add(medianBlur);
+        subBlurMenu.add(menuItem);
 
         manipulationMenu.add(subBlurMenu);
 
-        JMenuItem edge = new JMenuItem("edge image");
-        edge.addActionListener(this::edgeImage);
-        manipulationMenu.add(edge);
+        menuItem = new JMenuItem("edge image");
+        menuItem.addActionListener(this::edgeImage);
+        manipulationMenu.add(menuItem);
 
         JMenu subComboMenu = new JMenu("combo options");
 
-        JMenuItem smallCombo = new JMenuItem("soft_blur/thresh/edge");
-        smallCombo.addActionListener(this::smallComboImage);
-        subComboMenu.add(smallCombo);
+        menuItem = new JMenuItem("soft_blur/thresh/edge");
+        menuItem.addActionListener(this::smallComboImage);
+        subComboMenu.add(menuItem);
 
-        JMenuItem largeCombo = new JMenuItem("sharp/strong_blur/thresh/edge");
-        largeCombo.addActionListener(this::largeComboImage);
-        subComboMenu.add(largeCombo);
+        menuItem = new JMenuItem("sharp/strong_blur/thresh/edge");
+        menuItem.addActionListener(this::largeComboImage);
+        subComboMenu.add(menuItem);
 
         manipulationMenu.add(subComboMenu);
 
         JMenu sharpBlurMenu = new JMenu("sharp options");
 
-        JMenuItem sharp = new JMenuItem("sharp");
-        sharp.addActionListener( actionEvent
+        menuItem = new JMenuItem("sharp");
+        menuItem.addActionListener( actionEvent
                  -> runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.sharpenFilter), "sharp"));
-        sharpBlurMenu.add(sharp);
+        sharpBlurMenu.add(menuItem);
 
-        JMenuItem unsharp = new JMenuItem("unsharp");
-        unsharp.addActionListener( actionEvent
+        menuItem = new JMenuItem("unsharp");
+        menuItem.addActionListener( actionEvent
                  -> runFilterAction(sourceImage -> filterTools.runMatrixFilter(sourceImage, FilterTools.unsharpMaskFilter), "unsharp"));
-        sharpBlurMenu.add(unsharp);
+        sharpBlurMenu.add(menuItem);
 
         manipulationMenu.add(sharpBlurMenu);
 
-        JMenuItem menuItem = new JMenuItem("detectThing");
+        menuItem= new JMenuItem("detectThing");
         menuItem.addActionListener( actionEvent
                  -> runFilterAction(sourceImage -> filterTools.scanRowColImage(sourceImage), "Detect thing"));
         manipulationMenu.add(menuItem);
@@ -145,21 +150,20 @@ public class Main {
 
         JMenu imageOjectMenu = new JMenu("Image Objects");
 
-        JMenuItem findDie = new JMenuItem("find Die");
+        menuItem = new JMenuItem("find Die");
 
-        findDie.addActionListener(this::findDieImage);
-        imageOjectMenu.add(findDie);
-
+        menuItem.addActionListener(this::findDieImage);
+        imageOjectMenu.add(menuItem);
 
         for (int i=1;i<=6; i++) {
-            JMenuItem imageItem = imageSubMenu.add(new JMenuItem("Load Small Ideal " + i));
-            imageItem.addActionListener((ActionEvent e) -> displayImage(e, false, true));
-            imageItem.setActionCommand(String.valueOf(i));
+            menuItem = imageSubMenu.add(new JMenuItem("Load Small Ideal " + i));
+            menuItem.addActionListener((ActionEvent e) -> displayImage(e, false, true));
+            menuItem.setActionCommand(String.valueOf(i));
         }
         for (int i=1;i<=6; i++) {
-            JMenuItem imageItem = imageSubMenu.add(new JMenuItem("Load Original Unideal " + i));
-            imageItem.setActionCommand(String.valueOf(i));
-            imageItem.addActionListener((ActionEvent e) -> displayImage(e,true, false));
+            menuItem = imageSubMenu.add(new JMenuItem("Load Original Unideal " + i));
+            menuItem.setActionCommand(String.valueOf(i));
+            menuItem.addActionListener((ActionEvent e) -> displayImage(e,true, false));
         }
 
         String[] otherFiles = {
@@ -173,8 +177,8 @@ public class Main {
         };
         for (int i=0;i<otherFiles.length;i++) {
             String path = otherFiles[i];
-            JMenuItem imageItem = imageSubMenu.add(new JMenuItem("Load File " + path.substring(path.lastIndexOf("/") + 1)));
-            imageItem.addActionListener((ActionEvent e) -> displayImageByPath(path));
+            menuItem = imageSubMenu.add(new JMenuItem("Load File " + path.substring(path.lastIndexOf("/") + 1)));
+            menuItem.addActionListener((ActionEvent e) -> displayImageByPath(path));
         }
 
         JMenuBar m1 = new JMenuBar();
@@ -187,13 +191,15 @@ public class Main {
     void runFilterAction(FilterTools.ImageAction action, String filterName) {
         if (processedImage!=null) {
             long startTime = System.currentTimeMillis();
-             action.apply(processedImage);
+            action.apply(processedImage);
             long endTime = System.currentTimeMillis();
             imageData.add(filterName + " action: duration MS = " + (endTime - startTime));
-            imageHolder.setImage(processedImage.alteredImage);
+            if (!headlessMode) imageHolder.setImage(processedImage.alteredImage);
         }
-        refreshInfoPanel();
-        imageFrame.repaint();
+        if (!headlessMode) {
+            refreshInfoPanel();
+            imageFrame.repaint();
+        }
     }
     /* unfinished */
     void findDieImage(final ActionEvent actionEvent) {
@@ -308,22 +314,30 @@ public class Main {
     }
 
     void displayImageByPath(String filePath) {
-        BufferedImage bufferedImage = loadImage(filePath);
-        if (bufferedImage != null) {
-            ProcessedImage processedImage = new ProcessedImage();
-            processedImage.fileName = filePath;
-            processedImage.alteredImage = bufferedImage;
-            processedImage.originalImage = bufferedImage;
-            processedImage.dieObjects = new ArrayList<DieObject>();
+        ProcessedImage processedImage = loadImageFromFile(filePath);
+        if (processedImage != null) {
             this.processedImage = processedImage;
-            filterTools.resizeImageIfBig(processedImage, 640, 480);
-            imageData.add("New image size (" + processedImage.alteredImage.getWidth() + ", " + processedImage.alteredImage.getHeight() + ")");
             imageHolder.setImage(processedImage.alteredImage);
             image.setIcon(imageHolder);
             imageFrame.pack();
             imageFrame.repaint(30);
         }
         refreshInfoPanel();
+    }
+
+    ProcessedImage loadImageFromFile(String filePath) {
+        BufferedImage bufferedImage = loadImage(filePath);
+        if (bufferedImage != null) {
+            ProcessedImage processedImage = new ProcessedImage();
+            processedImage.fileName = filePath;
+            processedImage.alteredImage = bufferedImage;
+            processedImage.originalImage = bufferedImage;
+            processedImage.dieObjects = new ArrayList<>();
+            filterTools.resizeImageIfBig(processedImage, 640, 480);
+            imageData.add("New image size (" + processedImage.alteredImage.getWidth() + ", " + processedImage.alteredImage.getHeight() + ")");
+            return processedImage;
+        }
+        return null;
     }
 
     void displayImage(ActionEvent actionEvent, boolean original, boolean ideal) {
@@ -337,9 +351,82 @@ public class Main {
         infoView.setText(output);
     }
 
-    public static void main(String[] args) {
-        new Main();
+    public static void main(final String[] args) {
+        if (args == null || args.length == 0) {
+            new Main(false);
+        } else {
+            final DiceDetectCommand detectCommand  = createDetectCommandFromArgs(args);
+            if (detectCommand == null) {
+                System.exit(1);
+            } else {
+                Main processor = new Main(true);
+                processor.processedImage = processor.loadImageFromFile(detectCommand.file);
+                processor.smallComboImage(null);
+                processor.findDieImage(null);
+            }
+        }
     }
+
+    public static DiceDetectCommand createDetectCommandFromArgs(final String[] args) {
+        String filter = null;
+        String file = null;
+        String detector = null;
+
+        int commandIndex = 0;
+        while (commandIndex < args.length) {
+            switch(args[commandIndex]) {
+                case "-f":
+                case "--file":
+                    if (commandIndex+1 >= args.length) {
+                        System.out.printf("File command missing file name%n");
+                        return null;
+                    }
+                    file = args[commandIndex + 1];
+                    commandIndex += 2;
+                    break;
+                case "-p":
+                case "--process":
+                    if (commandIndex+1 >= args.length) {
+                        System.out.printf("Process command missing processor name%n");
+                        return null;
+                    }
+                    filter = args[commandIndex + 1];
+                    commandIndex += 2;
+                    break;
+                case "-d":
+                case "--detector":
+                    if (commandIndex+1 >= args.length) {
+                        System.out.printf("Process command missing detector name%n");
+                        return null;
+                    }
+                    detector = args[commandIndex + 1];
+                    commandIndex += 2;
+                    break;
+
+                default:
+                    System.out.printf("Unknown command line option %s%n", args[0]);
+                    return null;
+            }
+        }
+        if (file == null) {
+            System.out.printf("No file to process provide%n");
+            return null;
+        }
+        DiceDetectCommand detectCommand  = new DiceDetectCommand();
+        detectCommand.file = file;
+        detectCommand.detector = detector;
+        detectCommand.processFilter = filter;
+        return detectCommand;
+    }
+
+    public static class DiceDetectCommand {
+
+        String file;
+        String processFilter;
+        String detector;
+
+    }
+
 }
 
 /* Notes

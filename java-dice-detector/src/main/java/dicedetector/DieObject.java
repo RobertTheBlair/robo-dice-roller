@@ -46,11 +46,11 @@ public class DieObject {
     static DieObject createDieObject(int[] imageData, int height, int width, int x, int y, int bands) {
 
         /* find all connected pixels :) */
-        Set<Point> vistedPixels = new HashSet<Point>();
-        LinkedList<Point> pixelsToVisit = new LinkedList<Point>(); //Queue BFS
+        Set<Point> vistedPixels = new HashSet<>();
+        LinkedList<Point> pixelsToVisit = new LinkedList<>(); //Queue BFS
         Point startingPoint = new Point(x,y);
-        HashMap<Integer,ArrayList<Integer>> edgePixels = new HashMap<Integer,ArrayList<Integer>>();
-        ArrayList<Integer> firstElement = new ArrayList<Integer>();
+        HashMap<Integer,ArrayList<Integer>> edgePixels = new HashMap<>();
+        ArrayList<Integer> firstElement = new ArrayList<>();
         firstElement.add(x);
         edgePixels.put(y, firstElement);
         pixelsToVisit.add(startingPoint);
@@ -86,7 +86,7 @@ public class DieObject {
 
                             ArrayList<Integer> xVals = edgePixels.get(curY);
                             if(xVals == null) {
-                                xVals = new ArrayList<Integer>();
+                                xVals = new ArrayList<>();
                                 edgePixels.put(curY, xVals);
                             }
                             xVals.add(curX);
