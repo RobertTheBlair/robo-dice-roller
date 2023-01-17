@@ -74,7 +74,7 @@ public class Main {
     private JMenuBar initMenu() {
 
         JMenu manipulationMenu = new JMenu("modify image");
-        broken
+        // broken
 
         JMenuItem menuItem = new JMenuItem("convert to b/w");
         menuItem.addActionListener(this::thresholdImage);
